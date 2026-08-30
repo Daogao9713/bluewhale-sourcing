@@ -14,20 +14,27 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Blue Whale New Energy | 蓝鲸新能源",
-    template: "%s | Blue Whale New Energy",
+    default: "江苏星玥阳科技有限公司 | 科学仪器与工业在线监测",
+    template: "%s | 江苏星玥阳科技有限公司",
   },
   description:
-    "江苏蓝鲸新能源有限公司，面向新能源产业、全球商务、供应链协同与数字化业务场景提供企业服务。",
+    "江苏星玥阳科技有限公司，专注科学仪器、分子光谱技术与智能工业在线监测系统，覆盖近红外、红外、拉曼及工业过程在线分析应用。",
   keywords: [
-    "蓝鲸新能源",
-    "Blue Whale New Energy",
-    "新能源",
-    "global business",
-    "supply chain",
-    "sourcing",
-    "Japan",
-    "China",
+    "江苏星玥阳科技有限公司",
+    "星玥阳科技",
+    "UNIVERSE TECH",
+    "科学仪器",
+    "工业在线监测",
+    "近红外",
+    "红外光谱",
+    "拉曼光谱",
+    "煤质在线监测",
+    "风粉在线监测",
+    "润滑油在线监测",
+    "NC-300",
+    "NC-500",
+    "NC-700",
+    "苏州工业园区",
   ],
 };
 

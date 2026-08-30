@@ -32,9 +32,12 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             <h2 className="mt-3 text-2xl">{p.name}</h2>
             {p.subtitle && <p className="mt-5 text-lg text-slate-500">{p.subtitle}</p>}
             <p className="mt-7 leading-8 text-slate-600">{p.description}</p>
-            <Link href="/contact" className="mt-8 inline-block rounded-full bg-slate-950 px-6 py-3 text-sm text-white">
+            <Link
+             href="/contact"
+             className="mt-8 inline-block rounded-full bg-[#07101d] px-6 py-3 text-sm font-semibold !text-white transition hover:bg-[#162235]"
+            >
               咨询技术方案
-            </Link>
+         </Link>
           </div>
         </div>
 
