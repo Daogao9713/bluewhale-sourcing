@@ -27,7 +27,12 @@ export default function Home(){
 
  <section className="border-t bg-[#fafafa] py-24"><div className="mx-auto max-w-7xl px-5 lg:px-8"><Reveal><div className="flex items-end justify-between"><div><span className="xy-kicker">COMPANY NEWS</span><h2 className="mt-4 text-4xl font-semibold">公司动态</h2></div><Link href="/news" className="text-sm font-bold">新闻中心 →</Link></div></Reveal><div className="mt-9 divide-y border-y border-slate-200">{news.length?news.map((n,i)=><Reveal key={n.id} delay={i*60}><Link href={`/news/${n.slug}`} className="grid gap-4 py-7 transition hover:pl-2 md:grid-cols-[160px_1fr_80px] md:items-center"><div className="text-sm font-bold text-amber-600">{n.published_at?new Date(n.published_at).toLocaleDateString("zh-CN"):"NEWS"}</div><div><h3 className="text-xl font-semibold">{n.title||"公司动态"}</h3><p className="mt-2 line-clamp-1 text-sm text-slate-500">{n.summary||n.excerpt||"来自星玥阳科技的最新动态。"}</p></div><div className="text-right text-xl">→</div></Link></Reveal>):<div className="py-12 text-sm text-slate-400">Company News CMS 发布后自动展示。</div>}</div></div></section>
 
- <section className="bg-amber-400"><div className="mx-auto grid max-w-7xl gap-8 px-5 py-16 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8"><div><span className="text-[10px] font-bold tracking-[.2em]">TECHNICAL CONSULTATION</span><h2 className="mt-3 text-3xl font-semibold tracking-[-.035em]">把检测需求带到真实工业现场。</h2></div><Link href="/contact" className="rounded-full bg-[#07101d] px-7 py-3.5 text-sm font-bold text-white">联系技术团队 →</Link></div></section>
+ <section className="bg-amber-400"><div className="mx-auto grid max-w-7xl gap-8 px-5 py-16 lg:grid-cols-[1fr_auto] lg:items-center lg:px-8"><div><span className="text-[10px] font-bold tracking-[.2em]">TECHNICAL CONSULTATION</span><h2 className="mt-3 text-3xl font-semibold tracking-[-.035em]">把检测需求带到真实工业现场。</h2></div><Link
+  href="/contact"
+  className="rounded-full bg-[#07101d] px-7 py-3.5 text-sm font-bold !text-white transition hover:bg-[#162235]"
+>
+  联系技术团队 →
+</Link></div></section>
  <footer className="bg-white"><div className="mx-auto grid max-w-7xl gap-8 px-5 py-12 lg:grid-cols-3 lg:px-8"><div><b>{company.nameZh}</b><div className="mt-1 text-[10px] tracking-[.2em] text-slate-400">UNIVERSE TECH</div><p className="mt-4 text-sm leading-7 text-slate-500">{company.tagline}</p></div><div className="text-sm leading-7 text-slate-500"><b className="text-slate-950">业务联系</b><div className="mt-3">{company.contact} · {company.phone}</div><div>业务 QQ：{company.qq}</div></div><div className="text-sm leading-7 text-slate-500"><b className="text-slate-950">公司地址</b><div className="mt-3">{company.address}</div></div></div></footer>
  <FloatingAI/></main>
 }
