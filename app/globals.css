@@ -26,3 +26,54 @@ button,input,textarea{font:inherit}
 .xy-ai-form{margin-top:18px}.xy-ai-form textarea{width:100%;min-height:120px;resize:none;border:1px solid rgba(255,255,255,.1);border-radius:18px;background:rgba(0,0,0,.2);padding:15px;font-size:14px;outline:none}.xy-ai-form textarea:focus{border-color:rgba(255,180,0,.45)}.xy-ai-form button{margin-top:10px;width:100%;border-radius:14px;background:white;color:#07101d;padding:12px;font-size:13px;font-weight:800}
 @media(max-width:640px){.xy-ai-orb{right:16px;bottom:16px;width:54px;padding:8px}.xy-ai-orb-label{display:none}.xy-ai-orb-dot{width:38px}.xy-ai-modal{right:16px;bottom:16px}.xy-reveal{transform:translateY(12px)}}
 @media(prefers-reduced-motion:reduce){.xy-reveal{opacity:1;transform:none;transition:none}.xy-ai-orb,.xy-ai-modal,.xy-ai-backdrop{transition:none}}
+
+/* =========================================================
+   X0.42 Mobile Responsive Safety
+   ========================================================= */
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+@media (max-width: 767px) {
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  table {
+    min-width: 680px;
+  }
+
+  .xy-kicker {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+  }
+}
+
+@supports (padding: max(0px)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
