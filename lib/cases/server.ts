@@ -1,0 +1,3 @@
+import "server-only";import {db} from "@/lib/database/server";
+export async function publicCases(featured=false){let q=db().from("xy_cases").select("*").eq("status","published").order("sort_order").order("published_at",{ascending:false,nullsFirst:false});if(featured)q=q.eq("featured",true);const {data,error}=await q;if(error)throw error;return data||[]}
+export async function publicCase(slug:string){const {data,error}=await db().from("xy_cases").select("*").eq("slug",slug).eq("status","published").maybeSingle();if(error)throw error;return data}

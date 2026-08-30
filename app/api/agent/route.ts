@@ -1,256 +1,52 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { db } from "@/lib/database/server";
 import { verifyWorkspaceKey } from "@/lib/workspace-auth";
+import { chat } from "@/lib/ai/server";
 
-type AgentMessage = {
-  role: "user" | "assistant";
-  content: string;
-};
+type Msg={role:"user"|"assistant";content:string};
 
-type ModelProvider = "deepseek" | "openai";
-
-function extractOutputText(response: any, provider: ModelProvider) {
-  if (provider === "deepseek") {
-    const text = response?.choices?.[0]?.message?.content;
-    if (typeof text === "string") return text.trim();
-    if (Array.isArray(text)) {
-      return text
-        .map((part) => (typeof part?.text === "string" ? part.text : ""))
-        .join("")
-        .trim();
-    }
-    return "";
-  }
-
-  if (typeof response?.output_text === "string") {
-    return response.output_text;
-  }
-
-  const chunks: string[] = [];
-
-  for (const item of response?.output || []) {
-    for (const content of item?.content || []) {
-      if (
-        (content?.type === "output_text" || content?.type === "text") &&
-        typeof content?.text === "string"
-      ) {
-        chunks.push(content.text);
-      }
-    }
-  }
-
-  return chunks.join("\n").trim();
+function intents(q:string){
+ const s=q.toLowerCase();
+ const all=/数据库|database|全部|overview|总览/.test(s);
+ return {
+  projects:all||/项目|project/.test(s), suppliers:all||/供应商|supplier/.test(s),
+  rfqs:all||/rfq|询价|报价需求/.test(s), inquiries:all||/询盘|inquir|客户/.test(s),
+  documents:all||/报价单|合同|document|contract|quotation|订单/.test(s),
+  integrations:/mes|erp|wms|接口|integration/.test(s)
+ };
 }
+async function count(table:string){const {count}=await db().from(table).select("*",{count:"exact",head:true});return count||0;}
 
-function compact(value: unknown, limit = 12000) {
-  const text = JSON.stringify(value ?? [], null, 2);
-  return text.length > limit ? `${text.slice(0, limit)}\n...[truncated]` : text;
-}
-
-function resolveModelConfig() {
-  const deepseekKey = process.env.DEEPSEEK_API_KEY;
-  const deepseekModel = process.env.DEEPSEEK_MODEL || "deepseek-chat";
-  const deepseekBaseUrl = process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
-
-  const openaiKey = process.env.OPENAI_API_KEY;
-  const openaiModel = process.env.OPENAI_MODEL || "gpt-5.6-luna";
-
-  if (deepseekKey) {
-    return {
-      provider: "deepseek" as const,
-      apiKey: deepseekKey,
-      model: deepseekModel,
-      baseUrl: deepseekBaseUrl,
-      endpoint: "/v1/chat/completions",
-      requestBody: (messages: Array<{ role: string; content: string }>) => ({
-        model: deepseekModel,
-        messages,
-        max_tokens: 1400,
-        temperature: 0.7,
-      }),
-    };
-  }
-
-  if (openaiKey) {
-    return {
-      provider: "openai" as const,
-      apiKey: openaiKey,
-      model: openaiModel,
-      baseUrl: "https://api.openai.com/v1",
-      endpoint: "/responses",
-      requestBody: (messages: Array<{ role: string; content: string }>) => ({
-        model: openaiModel,
-        input: messages,
-        reasoning: { effort: "low" },
-        max_output_tokens: 1400,
-      }),
-    };
-  }
-
-  return null;
-}
-
-export async function POST(req: Request) {
-  const auth = verifyWorkspaceKey(req);
-
-  if (!auth.ok) {
-    return NextResponse.json(
-      { success: false, error: auth.error },
-      { status: auth.status }
-    );
-  }
-
-  try {
-    const body = await req.json();
-    const message = String(body?.message || "").trim();
-    const history = (Array.isArray(body?.history) ? body.history : [])
-      .filter(
-        (item: AgentMessage) =>
-          (item?.role === "user" || item?.role === "assistant") &&
-          typeof item?.content === "string"
-      )
-      .slice(-8);
-
-    if (!message) {
-      return NextResponse.json(
-        { success: false, error: "Message is required." },
-        { status: 400 }
-      );
-    }
-
-    const modelConfig = resolveModelConfig();
-
-    if (!modelConfig) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "DEEPSEEK_API_KEY or OPENAI_API_KEY is not configured.",
-        },
-        { status: 503 }
-      );
-    }
-
-    const [projects, suppliers, rfqs, inquiries] = await Promise.all([
-      supabaseAdmin
-        .from("projects")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(40),
-      supabaseAdmin
-        .from("suppliers")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(60),
-      supabaseAdmin
-        .from("rfqs")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(60),
-      supabaseAdmin
-        .from("inquiries")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(30),
-    ]);
-
-    const dbError =
-      projects.error || suppliers.error || rfqs.error || inquiries.error;
-
-    if (dbError) {
-      console.error("[agent:db]", dbError);
-      return NextResponse.json(
-        { success: false, error: "Could not load sourcing data." },
-        { status: 500 }
-      );
-    }
-
-    const businessContext = `
-PROJECTS:
-${compact(projects.data, 9000)}
-
-SUPPLIERS:
-${compact(suppliers.data, 12000)}
-
-RFQS:
-${compact(rfqs.data, 10000)}
-
-RECENT INQUIRIES:
-${compact(inquiries.data, 7000)}
-`;
-
-    const input = [
-      {
-        role: "system",
-        content: `
-You are Blue Whale Sourcing Copilot, an internal procurement analyst for a China-focused global sourcing business.
-
-Your job is to help the operator:
-- understand incoming sourcing requests,
-- compare projects, suppliers and RFQs,
-- identify missing specifications,
-- identify commercial and supply-chain risks,
-- recommend concrete next actions,
-- draft RFQ structures and supplier comparison criteria.
-
-Rules:
-1. Treat the supplied database context as the only source of truth for internal records.
-2. Never invent a supplier, quote, certification, lead time or price that is not in the context.
-3. Clearly distinguish facts from recommendations.
-4. If data is missing, say exactly what is missing.
-5. Prefer concise business analysis with actionable next steps.
-6. Do not expose secrets, environment variables, internal keys or implementation details.
-7. Reply in the language used by the operator unless asked otherwise.
-
-CURRENT DATABASE CONTEXT:
-${businessContext}
-        `.trim(),
-      },
-      ...history.map((item: AgentMessage) => ({
-        role: item.role,
-        content: item.content.slice(0, 2500),
-      })),
-      {
-        role: "user",
-        content: message.slice(0, 5000),
-      },
-    ];
-
-    const response = await fetch(
-      `${modelConfig.baseUrl}${modelConfig.endpoint}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${modelConfig.apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(modelConfig.requestBody(input)),
-      }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      console.error("[agent:model]", result);
-      return NextResponse.json(
-        { success: false, error: "AI request failed." },
-        { status: 502 }
-      );
-    }
-
-    const reply = extractOutputText(result, modelConfig.provider);
-
-    return NextResponse.json({
-      success: true,
-      reply: reply || "No response generated.",
-      model: modelConfig.model,
-      provider: modelConfig.provider,
-    });
-  } catch (error) {
-    console.error("[agent]", error);
-    return NextResponse.json(
-      { success: false, error: "Server error." },
-      { status: 500 }
-    );
-  }
+export async function POST(req:Request){
+ const a=verifyWorkspaceKey(req); if(!a.ok)return NextResponse.json({success:false,error:a.error},{status:a.status});
+ try{
+  const b=await req.json(); const message=String(b?.message||"").trim().slice(0,3000);
+  const history=(Array.isArray(b?.history)?b.history:Array.isArray(b?.messages)?b.messages:[]).filter((x:Msg)=>x?.role&&x?.content).slice(-6);
+  if(!message)return NextResponse.json({success:false,error:"Message is required."},{status:400});
+  const i=intents(message);
+  const counts=await Promise.all(["projects","suppliers","rfqs","inquiries","business_documents"].map(count));
+  const summary={projects:counts[0],suppliers:counts[1],rfqs:counts[2],inquiries:counts[3],documents:counts[4]};
+  const context:any={summary};
+  const jobs: Array<PromiseLike<unknown>> = [];
+  if(i.projects) jobs.push(db().from("projects").select("id,name,client_name,country,category,target_budget,currency,status,created_at").order("created_at",{ascending:false}).limit(12).then(r=>{context.projects=r.data||[]}));
+  if(i.suppliers) jobs.push(db().from("suppliers").select("id,company_name,country,categories,rating,risk_level,created_at").order("created_at",{ascending:false}).limit(15).then(r=>{context.suppliers=r.data||[]}));
+  if(i.rfqs) jobs.push(db().from("rfqs").select("id,title,quantity,target_price,currency,status,due_date,created_at").order("created_at",{ascending:false}).limit(15).then(r=>{context.rfqs=r.data||[]}));
+  if(i.inquiries) jobs.push(db().from("inquiries").select("id,company_name,contact_name,country,preferred_language,product_name,model_number,quantity,status,created_at").order("created_at",{ascending:false}).limit(12).then(r=>{context.inquiries=r.data||[]}));
+  if(i.documents) jobs.push(db().from("business_documents").select("id,document_no,document_type,title,status,customer_name,currency,total,valid_until,created_at").order("created_at",{ascending:false}).limit(15).then(r=>{context.documents=r.data||[]}));
+  if(i.integrations) jobs.push(db().from("integration_connections").select("code,name,integration_type,status,last_sync_at,last_error").limit(20).then(r=>{context.integrations=r.data||[]}));
+  await Promise.all(jobs);
+  const result=await chat([
+   {role:"system",content:`You are Blue Whale Business Copilot inside an enterprise operations platform.
+Answer in the operator's language. Use DATABASE_CONTEXT as the source of truth.
+Default to executive summaries, counts, risks and next actions instead of dumping raw records.
+Never expose personal email/phone unless the operator explicitly asks for a specific record.
+Never invent prices, suppliers, certifications, MES state or contracts.
+If the operator asks for "the database", give a compact snapshot and ask which module to drill into.
+Keep normal answers under 500 Chinese characters unless detail is requested.
+DATABASE_CONTEXT=${JSON.stringify(context)}`},
+   ...history.map((x:Msg)=>({role:x.role,content:String(x.content).slice(0,1200)})),
+   {role:"user",content:message}
+  ],700);
+  return NextResponse.json({success:true,reply:result.text,provider:result.provider,context_modules:Object.keys(context),counts:summary});
+ }catch(e:any){console.error("[agent]",e);return NextResponse.json({success:false,error:e.message||"Copilot failed."},{status:500});}
 }
