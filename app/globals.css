@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 
 :root{--xy-ink:#07101d;--xy-ink2:#0c1727;--xy-paper:#f4f5f6;--xy-line:#dce1e5;--xy-orange:#ffb400;--xy-muted:#697586;--xy-radius:28px}

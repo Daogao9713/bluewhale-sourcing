@@ -1,1 +1,7 @@
-export default function Template({children}:{children:React.ReactNode}){return <div className="xy-route">{children}<style>{`.xy-route{animation:routeIn .42s cubic-bezier(.2,.8,.2,1) both}@keyframes routeIn{from{opacity:.35;transform:translateY(7px)}to{opacity:1;transform:none}}@media(prefers-reduced-motion:reduce){.xy-route{animation:none}}`}</style></div>}
+export default function Template({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <>{children}</>;
+}

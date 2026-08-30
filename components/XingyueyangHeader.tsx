@@ -32,11 +32,11 @@ export default function XingyueyangHeader() {
         </nav>
 
         <Link
-          href="/workspace"
-          className="shrink-0 rounded-full bg-slate-950 px-4 py-2.5 text-[12px] font-semibold text-white transition hover:bg-slate-800"
-        >
+         href="/workspace"
+         className="shrink-0 rounded-full bg-[#07101d] px-5 py-2.5 text-[12px] font-semibold !text-white transition hover:bg-[#162235]"
+         >
           企业工作台
-        </Link>
+         </Link>
       </div>
     </header>
   );
