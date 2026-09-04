@@ -92,10 +92,10 @@ export default function XingyueyangHeader() {
                   key={item.href}
                   href={item.href}
                   className={`relative rounded-full px-3.5 py-2 transition-all duration-300 ${
-                       active
-                      ? "bg-white/60 font-semibold text-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,.9),0_6px_20px_rgba(15,23,42,.06)]"
+                  active
+                  ? "xy-nav-active-glass font-semibold text-slate-950"
                    : "text-slate-600 hover:bg-white/35 hover:text-slate-950"
-                  }`}
+                   }`}
                 >
                   {item.label}
 
@@ -145,7 +145,7 @@ export default function XingyueyangHeader() {
 
       {/* Mobile Navigation */}
       <div
-        className={`fixed inset-x-0 bottom-0 top-[64px] z-[90] overflow-y-auto bg-[#07101d] text-white transition-all duration-300 sm:top-[68px] lg:hidden ${
+        className={`xy-mobile-glass-menu fixed inset-x-0 bottom-0 top-[64px] z-[90] overflow-y-auto transition-all duration-300 sm:top-[68px] lg:hidden ${
           menuOpen
             ? "visible translate-y-0 opacity-100"
             : "invisible -translate-y-3 opacity-0 pointer-events-none"
@@ -175,37 +175,15 @@ export default function XingyueyangHeader() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMenuOpen(false)}
-                  className="group flex items-center gap-4 border-b border-white/10 py-5 !text-white"
+                  className={`xy-mobile-nav-item ${active ? "xy-mobile-nav-item-active" : ""}`}
                 >
-                  <span
-                    className={`w-7 text-[10px] font-bold ${
-                      active
-                        ? "text-amber-400"
-                        : "text-slate-600"
-                    }`}
-                  >
-                    {item.number}
-                  </span>
-
-                  <span
-                    className={`flex-1 text-[22px] font-medium tracking-[-.02em] transition ${
-                      active
-                        ? "text-amber-400"
-                        : "text-white"
-                    }`}
-                  >
-                    {item.label}
-                  </span>
-
-                  <span
-                    className={`text-lg transition-transform duration-300 ${
-                      active
-                        ? "text-amber-400"
-                        : "text-slate-500 group-hover:translate-x-1"
-                    }`}
-                  >
-                    →
-                  </span>
+                  <div>
+                    <div className="text-[9px] font-bold tracking-[.18em] text-slate-500">
+                      {item.number}
+                    </div>
+                    <div className="mt-1 text-lg font-semibold">{item.label}</div>
+                  </div>
+                  <span className="text-xs">↗</span>
                 </Link>
               );
             })}

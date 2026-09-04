@@ -123,7 +123,7 @@ export default function ProductAdmin() {
         </div>
         <button
           onClick={() => setEdit(blank())}
-          className="rounded-xl bg-slate-950 px-4 py-3 text-xs text-white"
+          className="xy-cms-primary xy-liquid-edge rounded-xl px-4 py-2.5 text-xs font-semibold"
         >
           新增产品
         </button>

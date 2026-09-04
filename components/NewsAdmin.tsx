@@ -327,7 +327,7 @@ export default function NewsAdmin() {
             {notice ? <p className="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">{notice}</p> : null}
 
             <div className="mt-5 grid grid-cols-2 gap-2">
-              <button disabled={loading} className="rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">
+              <button disabled={loading} className="xy-cms-primary xy-liquid-edge rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-50">
                 {loading ? "Saving..." : "Save"}
               </button>
               <button type="button" disabled={!form.id || loading} onClick={() => setStatus("published")} className="rounded-xl bg-cyan-700 px-4 py-3 text-sm font-semibold text-white disabled:opacity-40">
