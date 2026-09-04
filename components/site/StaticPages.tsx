@@ -66,7 +66,7 @@ export function BusinessContent() {
               <article className="group h-full rounded-[2rem] border border-slate-200 bg-white p-7 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold tracking-[0.18em] text-slate-400">0{index + 1}</span>
-                  <span className="rounded-full bg-slate-950 px-3 py-1 text-[10px] font-semibold tracking-[0.14em] text-white">{badge}</span>
+                  <span className="xy-glass-button rounded-full px-3 py-1 text-[10px] font-semibold">{badge}</span>
                 </div>
                 <h2 className="mt-16 text-3xl font-semibold tracking-[-0.04em]">{title}</h2>
                 <p className="mt-4 max-w-xl text-sm leading-7 text-slate-600">{desc}</p>
@@ -134,7 +134,9 @@ export function TechnologyContent() {
     ["API", copy.technology.api, copy.technology.apid],
   ];
   return (
-    <main>
+    <main className="xy-glass-canvas relative overflow-hidden">
+      <div className="pointer-events-none absolute -left-40 top-32 h-[420px] w-[420px] rounded-full bg-blue-300/10 blur-[100px]" />
+      <div className="pointer-events-none absolute -right-40 top-[40%] h-[420px] w-[420px] rounded-full bg-amber-300/10 blur-[110px]" />
       <section className="page-hero">
         <div className="site-shell py-24 md:py-32">
           <p className="section-kicker">{copy.technology.kicker}</p>
@@ -144,7 +146,7 @@ export function TechnologyContent() {
       </section>
       <section className="site-shell py-24">
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-[2.5rem] bg-slate-950 p-8 text-white md:p-12">
+          <div className="xy-glass-dark xy-liquid rounded-[32px] p-7 text-white lg:p-10">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold tracking-[0.2em] text-cyan-300">SOURCING OS</p>
               <span className="status-chip">V0.16</span>
@@ -155,7 +157,7 @@ export function TechnologyContent() {
           </div>
           <div className="grid gap-4">
             {cards.map(([code, title, desc]) => (
-              <div key={code} className="rounded-[2rem] border border-slate-200 bg-white p-6">
+              <div key={code} className="xy-glass-panel rounded-[32px] p-7 lg:p-10">
                 <p className="text-xs font-semibold text-cyan-700">{code}</p>
                 <h3 className="mt-8 text-xl font-semibold">{title}</h3>
                 <p className="mt-3 text-sm leading-7 text-slate-600">{desc}</p>

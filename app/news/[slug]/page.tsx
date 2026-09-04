@@ -28,7 +28,7 @@ export default async function NewsDetailPage({
       <XingyueyangHeader />
       <article className="mx-auto max-w-4xl px-5 py-16">
         <Link href="/news" className="text-sm text-slate-500">← 公司动态</Link>
-        <div className="mt-12 text-xs font-semibold tracking-[.15em] text-amber-600">
+        <div className="xy-glass-soft mt-12 inline-flex rounded-full px-4 py-2 text-xs font-semibold tracking-[.15em] text-amber-600">
           {n.published_at ? new Date(n.published_at).toLocaleDateString("zh-CN") : "XINGYUEYANG NEWS"}
         </div>
         <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-[-.04em] md:text-6xl">{pickTitle(n)}</h1>

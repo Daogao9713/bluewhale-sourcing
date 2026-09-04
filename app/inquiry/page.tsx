@@ -29,7 +29,7 @@ function InquiryInner() {
   }[lang];
 
   return (
-    <main className="bg-slate-50">
+    <main className="xy-glass-canvas min-h-screen">
       <section className="page-hero">
         <div className="site-shell py-16 md:py-24">
           <p className="section-kicker">{text.kicker}</p>
@@ -41,7 +41,7 @@ function InquiryInner() {
       </section>
 
       <section className="site-shell grid gap-8 py-12 lg:grid-cols-[0.72fr_1.28fr] lg:items-start">
-        <aside className="rounded-[2rem] bg-slate-950 p-7 text-white lg:sticky lg:top-28">
+        <aside className="xy-glass-panel xy-liquid rounded-[32px] p-7 lg:sticky lg:top-28 lg:p-10">
           <p className="text-xs font-semibold tracking-[0.18em] text-cyan-300">BEFORE SUBMITTING</p>
           <h2 className="mt-8 text-2xl font-semibold tracking-[-0.03em]">{text.side}</h2>
           <div className="mt-8 space-y-5 text-sm leading-6 text-slate-400">

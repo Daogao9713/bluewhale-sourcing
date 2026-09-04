@@ -109,12 +109,12 @@ export default function InquiryForm() {
   }
 
   const inputClass =
-    "w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100";
+    "xy-glass-input w-full rounded-2xl px-4 py-3.5 text-sm text-slate-950";
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm md:p-8"
+      className="xy-glass-panel space-y-6 rounded-[32px] p-6 sm:p-8 lg:p-10"
     >
       <div className="grid gap-6 md:grid-cols-2">
         <div>
@@ -171,7 +171,7 @@ export default function InquiryForm() {
         </div>
 
         <div className="flex items-end">
-          <label className="flex w-full items-center gap-3 rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-700">
+          <label className="xy-glass-input flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-sm text-slate-700">
             <input type="checkbox" name="needsEms" />
             {t.ems}
           </label>
@@ -190,7 +190,7 @@ export default function InquiryForm() {
 
       <button
         disabled={loading}
-        className="w-full rounded-xl bg-slate-950 px-6 py-4 font-medium text-white transition hover:bg-cyan-700 disabled:opacity-60"
+        className="w-full rounded-2xl bg-[#07101d] px-6 py-4 font-semibold text-white transition hover:bg-[#162235] disabled:opacity-60"
       >
         {loading ? t.submitting : t.submit}
       </button>

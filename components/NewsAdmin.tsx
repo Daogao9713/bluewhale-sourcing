@@ -222,7 +222,7 @@ export default function NewsAdmin() {
 
   if (!key) {
     return (
-      <main className="min-h-screen bg-slate-50 px-6 py-16">
+      <main className="xy-workspace min-h-screen px-6 py-16">
         <div className="mx-auto max-w-md rounded-[2rem] border border-slate-200 bg-white p-8 shadow-xl">
           <p className="text-xs font-semibold tracking-[0.18em] text-cyan-700">BLUE WHALE CMS · V0.17</p>
           <h1 className="mt-4 text-3xl font-semibold">Content Console</h1>
@@ -247,7 +247,7 @@ export default function NewsAdmin() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="xy-workspace min-h-screen">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-[1680px] items-center justify-between gap-4 px-5 py-4">
           <div>
@@ -256,7 +256,7 @@ export default function NewsAdmin() {
           </div>
           <div className="flex gap-2">
             <Link href="/news" className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold">Public news</Link>
-            <Link href="/workspace" className="rounded-full bg-slate-950 px-4 py-2 text-xs font-semibold text-white">Blue Whale OS</Link>
+            <Link href="/workspace" className="rounded-full bg-slate-950 px-4 py-2 text-xs font-semibold !text-white">Blue Whale OS</Link>
             <button onClick={logout} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-500">Lock</button>
           </div>
         </div>
@@ -283,7 +283,7 @@ export default function NewsAdmin() {
         </div>
 
         <div className="grid gap-6 2xl:grid-cols-[560px_minmax(0,1fr)_420px]">
-          <form onSubmit={save} className="h-fit rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <form onSubmit={save} className="xy-workspace-panel h-fit rounded-[2rem] p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[10px] font-semibold tracking-[0.18em] text-cyan-700">EDITOR</p>
@@ -356,7 +356,7 @@ export default function NewsAdmin() {
 
             <div className="space-y-3">
               {items.map((item) => (
-                <article key={item.id} className={`rounded-[1.5rem] border bg-white p-5 shadow-sm ${form.id === item.id ? "border-cyan-300 ring-4 ring-cyan-50" : "border-slate-200"}`}>
+                <article key={item.id} className={`xy-workspace-panel rounded-[1.5rem] p-5 ${form.id === item.id ? "border-cyan-300 ring-4 ring-cyan-50" : ""}`}>
                   <div className="flex flex-col justify-between gap-4 md:flex-row">
                     <button type="button" onClick={() => edit(item)} className="min-w-0 flex-1 text-left">
                       <div className="flex items-center gap-2">

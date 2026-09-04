@@ -58,7 +58,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             </div>
           </div>
 
-          <div className="rounded-3xl border p-8">
+          <div className="xy-glass-panel rounded-[30px] p-6 lg:p-8">
             <p className="text-xs tracking-[.18em] text-amber-600">APPLICATIONS</p>
             <h3 className="mt-3 text-2xl font-semibold">应用场景</h3>
             <div className="mt-6 flex flex-wrap gap-2">

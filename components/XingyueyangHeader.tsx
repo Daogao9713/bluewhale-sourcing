@@ -52,7 +52,7 @@ export default function XingyueyangHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-[100] border-b border-slate-200/80 bg-white/95 backdrop-blur-xl">
+      <header className="sticky top-0 z-[100] border-b border-white/50 bg-white/62 shadow-[0_1px_0_rgba(255,255,255,.75)_inset,0_10px_35px_rgba(15,23,42,.045)] backdrop-blur-[22px] backdrop-saturate-[150%]">
         <div className="mx-auto flex h-[64px] max-w-7xl items-center justify-between gap-3 px-4 sm:h-[68px] sm:px-5 lg:h-[72px] lg:gap-6 lg:px-8">
           {/* Brand */}
           <Link
@@ -91,17 +91,14 @@ export default function XingyueyangHeader() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`relative py-2 transition ${
-                    active
-                      ? "font-semibold text-slate-950"
-                      : "hover:text-slate-950"
+                  className={`relative rounded-full px-3.5 py-2 transition-all duration-300 ${
+                       active
+                      ? "bg-white/60 font-semibold text-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,.9),0_6px_20px_rgba(15,23,42,.06)]"
+                   : "text-slate-600 hover:bg-white/35 hover:text-slate-950"
                   }`}
                 >
                   {item.label}
 
-                  {active && (
-                    <span className="absolute bottom-0 left-0 h-[2px] w-full rounded-full bg-amber-400" />
-                  )}
                 </Link>
               );
             })}
@@ -110,7 +107,7 @@ export default function XingyueyangHeader() {
           {/* Desktop Workspace */}
           <Link
             href="/workspace"
-            className="hidden shrink-0 rounded-full bg-[#07101d] px-5 py-2.5 text-[12px] font-semibold !text-white transition hover:bg-[#162235] lg:inline-flex"
+            className="xy-glass-button-dark hidden shrink-0 rounded-full px-5 py-2.5 text-[12px] font-semibold !text-white lg:inline-flex"
           >
             企业工作台
           </Link>

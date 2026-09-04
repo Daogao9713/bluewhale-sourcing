@@ -134,7 +134,7 @@ export default function ProductAdmin() {
       {edit && (
         <form
           onSubmit={save}
-          className="mt-6 grid gap-4 rounded-3xl border bg-white p-6 lg:grid-cols-2"
+          className="xy-workspace-panel mt-6 grid gap-4 rounded-3xl p-6 lg:grid-cols-2"
         >
           <div className="lg:col-span-2 flex justify-between">
             <b>{edit.id ? "编辑产品" : "新增产品"}</b>
@@ -182,7 +182,7 @@ export default function ProductAdmin() {
             onChange={(e) => setEdit({ ...edit, description: e.target.value })}
           />
 
-          <div className="rounded-2xl border p-4">
+          <div className="xy-workspace-panel rounded-2xl p-4">
             <div className="text-sm font-medium">产品主图</div>
             {edit.image_url ? (
               <img
@@ -249,7 +249,7 @@ export default function ProductAdmin() {
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         {rows.map((p) => (
-          <article key={p.id} className="overflow-hidden rounded-3xl border bg-white">
+          <article key={p.id} className="xy-workspace-panel overflow-hidden rounded-3xl">
             <div className="grid aspect-[4/3] place-items-center bg-slate-50">
               {p.image_url ? (
                 <img src={p.image_url} className="h-full w-full object-contain p-4" alt="" />
