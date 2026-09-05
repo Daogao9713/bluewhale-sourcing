@@ -1,10 +1,13 @@
-import CompanySiteLayout from "@/components/site/CompanySiteLayout";
+import XingyueyangSiteLayout from "@/components/XingyueyangSiteLayout";
+import { SiteLanguageProvider } from "@/components/site/SiteLanguageProvider";
 import { TechnologyContent } from "@/components/site/StaticPages";
 
 export default function Page() {
   return (
-    <CompanySiteLayout>
-      <TechnologyContent />
-    </CompanySiteLayout>
+    <SiteLanguageProvider>
+      <XingyueyangSiteLayout>
+        <TechnologyContent />
+      </XingyueyangSiteLayout>
+    </SiteLanguageProvider>
   );
 }
