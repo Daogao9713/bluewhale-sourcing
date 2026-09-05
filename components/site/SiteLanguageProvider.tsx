@@ -17,7 +17,7 @@ export function SiteLanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const stored = window.localStorage.getItem("bluewhale_site_lang");
     if (stored === "zh" || stored === "ja" || stored === "en") {
-      setLangState(stored);
+      window.setTimeout(() => setLangState(stored), 0);
     }
   }, []);
 

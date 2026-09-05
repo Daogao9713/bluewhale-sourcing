@@ -18,10 +18,12 @@ export async function GET(req: Request) {
         },
       }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[news:get]", {
-      message: error?.message || String(error),
-      code: error?.code || "",
+      message: error instanceof Error ? error.message : String(error),
+      code: typeof error === "object" && error !== null && "code" in error
+        ? String(error.code)
+        : "",
     });
     return NextResponse.json(
       { success: false, error: "Failed to load news." },

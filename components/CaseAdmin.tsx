@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 
 type CaseStatus = "draft" | "published" | "archived";
 
@@ -39,7 +40,7 @@ export default function CaseAdmin() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
-  async function api(path: string, init: RequestInit = {}) {
+  const api = useCallback(async function api(path: string, init: RequestInit = {}) {
     const headers = new Headers(init.headers);
 
     headers.set(
@@ -84,21 +85,23 @@ export default function CaseAdmin() {
     }
 
     return payload;
-  }
+  }, []);
 
-  async function load() {
+  const load = useCallback(async function load() {
     try {
       setErr("");
       const data = await api("/api/workspace/cases");
       setRows(data.cases || []);
-    } catch (error: any) {
-      setErr(error.message);
+    } catch (error: unknown) {
+      setErr(error instanceof Error ? error.message : "Request failed");
     }
-  }
+  }, [api]);
 
   useEffect(() => {
-    void load();
-  }, []);
+    const timer = window.setTimeout(() => void load(), 0);
+
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   async function upload(file: File) {
     setBusy(true);
@@ -123,8 +126,8 @@ export default function CaseAdmin() {
             }
           : current
       );
-    } catch (error: any) {
-      setErr(error.message);
+    } catch (error: unknown) {
+      setErr(error instanceof Error ? error.message : "Upload failed");
     } finally {
       setBusy(false);
     }
@@ -146,8 +149,8 @@ export default function CaseAdmin() {
 
       setEdit(null);
       await load();
-    } catch (error: any) {
-      setErr(error.message);
+    } catch (error: unknown) {
+      setErr(error instanceof Error ? error.message : "Save failed");
     } finally {
       setBusy(false);
     }
@@ -424,8 +427,10 @@ export default function CaseAdmin() {
 
               <div className="mt-5 overflow-hidden rounded-2xl border border-white/70 bg-slate-100/70">
                 {edit.image_url ? (
-                  <img
+                  <Image
                     src={edit.image_url}
+                    width={960}
+                    height={540}
                     className="aspect-video w-full object-cover"
                     alt=""
                   />
@@ -592,8 +597,10 @@ export default function CaseAdmin() {
             >
               <div className="relative overflow-hidden bg-slate-100">
                 {item.image_url ? (
-                  <img
+                  <Image
                     src={item.image_url}
+                    width={960}
+                    height={540}
                     className="aspect-video w-full object-cover transition duration-700 group-hover:scale-[1.025]"
                     alt=""
                   />

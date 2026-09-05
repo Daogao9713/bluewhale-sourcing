@@ -26,7 +26,7 @@ export async function POST(req:Request){
   const i=intents(message);
   const counts=await Promise.all(["projects","suppliers","rfqs","inquiries","business_documents"].map(count));
   const summary={projects:counts[0],suppliers:counts[1],rfqs:counts[2],inquiries:counts[3],documents:counts[4]};
-  const context:any={summary};
+   const context: Record<string, unknown> = {summary};
   const jobs: Array<PromiseLike<unknown>> = [];
   if(i.projects) jobs.push(db().from("projects").select("id,name,client_name,country,category,target_budget,currency,status,created_at").order("created_at",{ascending:false}).limit(12).then(r=>{context.projects=r.data||[]}));
   if(i.suppliers) jobs.push(db().from("suppliers").select("id,company_name,country,categories,rating,risk_level,created_at").order("created_at",{ascending:false}).limit(15).then(r=>{context.suppliers=r.data||[]}));
@@ -48,5 +48,5 @@ DATABASE_CONTEXT=${JSON.stringify(context)}`},
    {role:"user",content:message}
   ],700);
   return NextResponse.json({success:true,reply:result.text,provider:result.provider,context_modules:Object.keys(context),counts:summary});
- }catch(e:any){console.error("[agent]",e);return NextResponse.json({success:false,error:e.message||"Copilot failed."},{status:500});}
+ }catch(e:unknown){console.error("[agent]",e);return NextResponse.json({success:false,error:e instanceof Error?e.message:"Copilot failed."},{status:500});}
 }

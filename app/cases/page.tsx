@@ -1,12 +1,22 @@
 import Link from "next/link";
+import Image from "next/image";
 import XingyueyangHeader from "@/components/XingyueyangHeader";
 import FloatingAI from "@/components/FloatingAI";
 import { publicCases } from "@/lib/cases/server";
 
 export const dynamic = "force-dynamic";
 
+type CaseRecord = {
+	id: string;
+	slug: string;
+	title: string;
+	image_url?: string | null;
+	industry?: string | null;
+	summary?: string | null;
+};
+
 export default async function Page() {
-	const cases: any[] = await publicCases();
+	const cases = await publicCases() as CaseRecord[];
 
 	return (
 		<main className="min-h-screen bg-[#07101d] text-white">
@@ -23,7 +33,7 @@ export default async function Page() {
 						>
 							{c.image_url ? (
 								<div className="aspect-[16/10] overflow-hidden bg-slate-200">
-									<img src={c.image_url} className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]" alt={c.title} />
+									<Image src={c.image_url} width={960} height={600} className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]" alt={c.title} />
 								</div>
 							) : (
 								<div className="grid aspect-[16/10] place-items-center bg-slate-200 text-slate-500">案例图片待上传</div>

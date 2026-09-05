@@ -28,7 +28,7 @@ export async function publicProducts(featured = false) {
 
   if (featuredError) throw featuredError;
 
-  const chosen: any[] = [...(featuredRows || [])];
+  const chosen = [...(featuredRows || [])];
 
   if (chosen.length < 3) {
     const { data: all, error } = await client

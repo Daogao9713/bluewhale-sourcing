@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { company } from "@/lib/xingyueyang";
 
 const navigation = [
@@ -21,9 +22,11 @@ export default function XingyueyangFooter() {
           <div>
             <Link href="/" className="inline-flex items-center gap-3">
               <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-                <img
+                <Image
                   src="/xingyueyang-logo.png"
                   alt="江苏星玥阳科技有限公司"
+                  width={88}
+                  height={88}
                   className="absolute left-1/2 top-0 h-[88px] w-auto max-w-none -translate-x-1/2"
                 />
               </div>

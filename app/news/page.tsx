@@ -1,12 +1,23 @@
 import Link from "next/link";
+import Image from "next/image";
 import XingyueyangHeader from "@/components/XingyueyangHeader";
 import FloatingAI from "@/components/FloatingAI";
 import { listPublishedNews } from "@/lib/news/server";
 
 export const dynamic = "force-dynamic";
 
+type NewsRecord = {
+  id: string;
+  slug: string;
+  title?: string | null;
+  summary?: string | null;
+  excerpt?: string | null;
+  cover_image_url?: string | null;
+  published_at?: string | null;
+};
+
 export default async function NewsPage() {
-  const news: any[] = await listPublishedNews(50);
+  const news = await listPublishedNews(50) as NewsRecord[];
 
   return (
     <main className="min-h-screen bg-[#f5f6f7] text-slate-950">
@@ -32,7 +43,7 @@ export default async function NewsPage() {
             >
               <div className="relative aspect-[16/9] overflow-hidden bg-[#e9ecef] lg:aspect-auto">
                 {news[0].cover_image_url ? (
-                  <img src={news[0].cover_image_url} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]" />
+                  <Image src={news[0].cover_image_url} width={1200} height={675} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.025]" />
                 ) : (
                   <div className="absolute inset-0 [background-image:linear-gradient(120deg,rgba(245,158,11,.14),transparent_40%),linear-gradient(rgba(15,23,42,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,.05)_1px,transparent_1px)] [background-size:auto,32px_32px,32px_32px]" />
                 )}

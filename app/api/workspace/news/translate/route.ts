@@ -24,8 +24,14 @@ export async function POST(req: Request) {
     ], 5000);
 
     return NextResponse.json({ success: true, text: result.text, provider: result.provider });
-  } catch (error: any) {
-    console.error("[cms:translate]", error?.message || error);
-    return NextResponse.json({ success: false, error: error?.message || "Translation failed." }, { status: 500 });
+  } catch (error: unknown) {
+    console.error(
+      "[cms:translate]",
+      error instanceof Error ? error.message : error
+    );
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : "Translation failed.",
+    }, { status: 500 });
   }
 }

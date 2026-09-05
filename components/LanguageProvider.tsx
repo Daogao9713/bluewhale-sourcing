@@ -7,7 +7,7 @@ type Lang = "zh" | "ja" | "en";
 
 const LanguageContext = createContext({
   lang: "zh" as Lang,
-  setLang: (l: Lang) => {},
+  setLang: (l: Lang) => { void l; },
 });
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
@@ -16,13 +16,17 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>((typeof window !== "undefined" ? (localStorage.getItem("lang") as Lang) || "zh" : "zh"));
 
   useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const p = params.get("lang") as Lang | null;
-      if (p && p !== lang) setLangState(p);
-    } catch (e) {
-      // ignore
-    }
+    const timer = window.setTimeout(() => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const p = params.get("lang") as Lang | null;
+        if (p && p !== lang) setLangState(p);
+      } catch {
+        // ignore
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -24,7 +24,8 @@ export default function InquiryForm() {
     useState(false);
 
   useEffect(() => {
-    try {
+    const timer = window.setTimeout(() => {
+      try {
       const stored =
         window.sessionStorage.getItem(
           PROJECT_CONTEXT_STORAGE_KEY
@@ -53,9 +54,12 @@ export default function InquiryForm() {
         "[InquiryForm:project-context]",
         error
       );
-    } finally {
-      setAiPrefillReady(true);
-    }
+      } finally {
+        setAiPrefillReady(true);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   function buildProjectMessage(

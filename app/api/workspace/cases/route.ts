@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/database/server";
 import { verifyWorkspaceKey } from "@/lib/workspace-auth";
 
-const no = (a: any) =>
+type WorkspaceAuthResult = ReturnType<typeof verifyWorkspaceKey>;
+
+const no = (a: WorkspaceAuthResult) =>
   NextResponse.json(
     { error: a.error },
     { status: a.status }
@@ -106,13 +108,13 @@ export async function POST(req: Request) {
       success: true,
       case: data,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[workspace/cases POST]", error);
 
     return NextResponse.json(
       {
         error:
-          error?.message ||
+          error instanceof Error ? error.message :
           "Failed to create case.",
       },
       { status: 500 }
@@ -200,13 +202,13 @@ export async function PATCH(req: Request) {
       success: true,
       case: data,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[workspace/cases PATCH]", error);
 
     return NextResponse.json(
       {
         error:
-          error?.message ||
+          error instanceof Error ? error.message :
           "Failed to update case.",
       },
       { status: 500 }

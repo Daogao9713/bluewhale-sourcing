@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/database/server";
 import { verifyWorkspaceKey } from "@/lib/workspace-auth";
 
-const deny = (a: any) =>
+const deny = (a: ReturnType<typeof verifyWorkspaceKey>) =>
   NextResponse.json({ success: false, error: a.error }, { status: a.status });
 
 export async function GET(req: Request) {

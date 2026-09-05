@@ -19,7 +19,7 @@ export function createMESAdapter(): MESAdapter {
     return raw;
   }
   return {
-    async health(){ if(!base)return {ok:false,message:"MES adapter reserved but not configured."}; try{await call("/health");return {ok:true,message:"MES reachable."};}catch(e:any){return {ok:false,message:e.message};}},
-    async pushWorkOrder(payload){ const raw:any=await call("/work-orders",{method:"POST",body:JSON.stringify(payload)}); return {ok:true,externalId:raw?.id||raw?.work_order_id,raw}; }
+    async health(){ if(!base)return {ok:false,message:"MES adapter reserved but not configured."}; try{await call("/health");return {ok:true,message:"MES reachable."};}catch(e:unknown){return {ok:false,message:e instanceof Error?e.message:"MES unavailable."};}},
+    async pushWorkOrder(payload){ const raw=await call("/work-orders",{method:"POST",body:JSON.stringify(payload)}); const data = raw && typeof raw === "object" ? raw as Record<string, unknown> : {}; return {ok:true,externalId:typeof data.id === "string" ? data.id : typeof data.work_order_id === "string" ? data.work_order_id : undefined,raw}; }
   };
 }

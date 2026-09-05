@@ -1,9 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSiteLanguage } from "./SiteLanguageProvider";
 
-export default function NewsArticle({ article }: { article: any }) {
+type NewsArticleData = {
+  published_at: string;
+  cover_url?: string | null;
+  [key: string]: string | null | undefined;
+};
+
+export default function NewsArticle({ article }: { article: NewsArticleData }) {
   const { lang, copy } = useSiteLanguage();
 
   const pick = (field: string) =>
@@ -34,9 +41,11 @@ export default function NewsArticle({ article }: { article: any }) {
 
       <article className="site-shell max-w-5xl py-16 md:py-20">
         {article.cover_url ? (
-          <img
+          <Image
             src={article.cover_url}
             alt=""
+            width={1200}
+            height={600}
             className="mb-12 aspect-[16/8] w-full rounded-[2rem] object-cover"
           />
         ) : null}

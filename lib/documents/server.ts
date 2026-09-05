@@ -16,7 +16,7 @@ export async function listDocuments(limit=100) {
   return data || [];
 }
 
-export async function audit(action:string, entityType:string, entityId?:string, metadata:any={}) {
+export async function audit(action:string, entityType:string, entityId?:string, metadata: Record<string, unknown>={}) {
   const { error } = await db().from("audit_logs").insert({
     action, entity_type: entityType, entity_id: entityId || null, metadata
   });

@@ -1,14 +1,33 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 
 export default function ProductAdmin() {
-  const [rows, setRows] = useState<any[]>([]);
-  const [edit, setEdit] = useState<any>(null);
+  type ProductDraft = {
+    id?: string;
+    model?: string;
+    name?: string;
+    slug?: string;
+    category?: string;
+    subtitle?: string;
+    description?: string;
+    image_url?: string;
+    features?: string[];
+    applications?: string[];
+    featuresText?: string;
+    applicationsText?: string;
+    specifications?: Record<string, unknown>;
+    featured?: boolean;
+    sort_order?: number;
+    status?: string;
+  };
+  const [rows, setRows] = useState<ProductDraft[]>([]);
+  const [edit, setEdit] = useState<ProductDraft | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
-  async function api(path: string, init: RequestInit = {}) {
+  const api = useCallback(async function api(path: string, init: RequestInit = {}) {
     const key = sessionStorage.getItem("bluewhale_admin_key") || "";
     const h = new Headers(init.headers);
     h.set("x-admin-key", key);
@@ -26,19 +45,21 @@ export default function ProductAdmin() {
     const p = await r.json();
     if (!r.ok) throw new Error(p.error || "Request failed");
     return p;
-  }
+  }, []);
 
-  async function load() {
+  const load = useCallback(async function load() {
     try {
       setRows((await api("/api/workspace/products")).products || []);
-    } catch (e: any) {
-      setErr(e.message);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Request failed");
     }
-  }
+  }, [api]);
 
   useEffect(() => {
-    load();
-  }, []);
+    const timer = window.setTimeout(() => void load(), 0);
+
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   function blank() {
     return {
@@ -64,9 +85,9 @@ export default function ProductAdmin() {
       const f = new FormData();
       f.append("file", file);
       const p = await api("/api/workspace/media", { method: "POST", body: f });
-      setEdit((x: any) => ({ ...x, image_url: p.url }));
-    } catch (e: any) {
-      setErr(e.message);
+      setEdit((x) => ({ ...x, image_url: p.url }));
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Upload failed");
     } finally {
       setBusy(false);
     }
@@ -80,18 +101,18 @@ export default function ProductAdmin() {
     try {
       const body = {
         ...edit,
-        features: String(edit.featuresText ?? (edit.features || []).join("\n"))
+        features: String(edit!.featuresText ?? (edit!.features || []).join("\n"))
           .split("\n")
           .map((x: string) => x.trim())
           .filter(Boolean),
-        applications: String(edit.applicationsText ?? (edit.applications || []).join("\n"))
+        applications: String(edit!.applicationsText ?? (edit!.applications || []).join("\n"))
           .split("\n")
           .map((x: string) => x.trim())
           .filter(Boolean),
       };
 
-      if (edit.id) {
-        await api(`/api/workspace/products/${edit.id}`, {
+      if (edit!.id) {
+        await api(`/api/workspace/products/${edit!.id}`, {
           method: "PATCH",
           body: JSON.stringify(body),
         });
@@ -104,8 +125,8 @@ export default function ProductAdmin() {
 
       setEdit(null);
       await load();
-    } catch (e: any) {
-      setErr(e.message);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Save failed");
     } finally {
       setBusy(false);
     }
@@ -137,7 +158,7 @@ export default function ProductAdmin() {
           className="xy-workspace-panel mt-6 grid gap-4 rounded-3xl p-6 lg:grid-cols-2"
         >
           <div className="lg:col-span-2 flex justify-between">
-            <b>{edit.id ? "编辑产品" : "新增产品"}</b>
+            <b>{edit!.id ? "编辑产品" : "新增产品"}</b>
             <button type="button" onClick={() => setEdit(null)} className="text-sm text-slate-400">
               关闭
             </button>
@@ -147,46 +168,48 @@ export default function ProductAdmin() {
             className="field"
             required
             placeholder="型号，例如 NC-300"
-            value={edit.model || ""}
+            value={edit!.model || ""}
             onChange={(e) => setEdit({ ...edit, model: e.target.value })}
           />
           <input
             className="field"
             required
             placeholder="产品名称"
-            value={edit.name || ""}
+            value={edit!.name || ""}
             onChange={(e) => setEdit({ ...edit, name: e.target.value })}
           />
           <input
             className="field"
             placeholder="分类"
-            value={edit.category || ""}
+            value={edit!.category || ""}
             onChange={(e) => setEdit({ ...edit, category: e.target.value })}
           />
           <input
             className="field"
             placeholder="Slug，例如 nc-300"
-            value={edit.slug || ""}
+            value={edit!.slug || ""}
             onChange={(e) => setEdit({ ...edit, slug: e.target.value })}
           />
           <input
             className="field lg:col-span-2"
             placeholder="一句话副标题"
-            value={edit.subtitle || ""}
+            value={edit!.subtitle || ""}
             onChange={(e) => setEdit({ ...edit, subtitle: e.target.value })}
           />
           <textarea
             className="field min-h-28 lg:col-span-2"
             placeholder="产品介绍"
-            value={edit.description || ""}
+            value={edit!.description || ""}
             onChange={(e) => setEdit({ ...edit, description: e.target.value })}
           />
 
           <div className="xy-workspace-panel rounded-2xl p-4">
             <div className="text-sm font-medium">产品主图</div>
-            {edit.image_url ? (
-              <img
-                src={edit.image_url}
+            {edit!.image_url ? (
+              <Image
+                src={edit!.image_url}
+                width={960}
+                height={384}
                 className="mt-3 h-48 w-full rounded-xl object-contain bg-slate-50"
                 alt=""
               />
@@ -210,13 +233,13 @@ export default function ProductAdmin() {
             <textarea
               className="field min-h-28"
               placeholder="核心特点，每行一条"
-              value={edit.featuresText ?? (edit.features || []).join("\n")}
+              value={edit!.featuresText ?? (edit!.features || []).join("\n")}
               onChange={(e) => setEdit({ ...edit, featuresText: e.target.value })}
             />
             <textarea
               className="field min-h-28"
               placeholder="应用场景，每行一条"
-              value={edit.applicationsText ?? (edit.applications || []).join("\n")}
+              value={edit!.applicationsText ?? (edit!.applications || []).join("\n")}
               onChange={(e) => setEdit({ ...edit, applicationsText: e.target.value })}
             />
           </div>
@@ -224,7 +247,7 @@ export default function ProductAdmin() {
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
-              checked={!!edit.featured}
+              checked={!!edit!.featured}
               onChange={(e) => setEdit({ ...edit, featured: e.target.checked })}
             />
             首页推荐
@@ -234,7 +257,7 @@ export default function ProductAdmin() {
             className="field"
             type="number"
             placeholder="排序"
-            value={edit.sort_order || 0}
+            value={edit!.sort_order || 0}
             onChange={(e) => setEdit({ ...edit, sort_order: Number(e.target.value) })}
           />
 
@@ -252,7 +275,7 @@ export default function ProductAdmin() {
           <article key={p.id} className="xy-workspace-panel overflow-hidden rounded-3xl">
             <div className="grid aspect-[4/3] place-items-center bg-slate-50">
               {p.image_url ? (
-                <img src={p.image_url} className="h-full w-full object-contain p-4" alt="" />
+                <Image src={p.image_url} width={960} height={720} className="h-full w-full object-contain p-4" alt="" />
               ) : (
                 <span className="text-xs text-slate-400">等待设备图片</span>
               )}

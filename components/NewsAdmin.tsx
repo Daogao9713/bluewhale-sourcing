@@ -1,11 +1,13 @@
 "use client";
 
-import { ProjectContext } from "@/lib/ai/project-context";
 import Link from "next/link";
+import Image from "next/image";
 import {
   FormEvent,
+  useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -62,6 +64,18 @@ const empty = {
   published_at: "",
 };
 
+type NewsForm = Omit<
+  typeof empty,
+  | "summary_zh"
+  | "summary_ja"
+  | "summary_en"
+  | "content_zh"
+  | "content_ja"
+  | "content_en"
+  | "cover_url"
+> &
+  Partial<News>;
+
 export default function NewsAdmin() {
   const [key, setKey] = useState("");
   const [draftKey, setDraftKey] = useState("");
@@ -70,16 +84,10 @@ export default function NewsAdmin() {
     useState<News[]>([]);
 
   const [form, setForm] =
-    useState<any>(empty);
+    useState<NewsForm>(empty);
 
   const [loading, setLoading] =
     useState(false);
-
-  const [aiContext, setAiContext] =
-  useState<ProjectContext | null>(null);
-
-  const [aiPrefillReady, setAiPrefillReady] =
-  useState(false);
 
   const [translating, setTranslating] =
     useState<"" | "ja" | "en">("");
@@ -89,6 +97,10 @@ export default function NewsAdmin() {
 
   const [q, setQ] =
     useState("");
+  const qRef = useRef(q);
+  useEffect(() => {
+    qRef.current = q;
+  }, [q]);
 
   const [filter, setFilter] =
     useState<"all" | NewsStatus>("all");
@@ -113,18 +125,11 @@ export default function NewsAdmin() {
       ) || "";
 
     if (stored) {
-      setKey(stored);
+      window.setTimeout(() => setKey(stored), 0);
     }
   }, []);
 
-  useEffect(() => {
-    if (!key) return;
-
-    void load();
-    void loadStats();
-  }, [key, filter]);
-
-  async function api(
+  const api = useCallback(async function api(
     path: string,
     init: RequestInit = {}
   ) {
@@ -162,9 +167,9 @@ export default function NewsAdmin() {
     }
 
     return data;
-  }
+  }, [key]);
 
-  async function load(search = q) {
+  const load = useCallback(async function load(search = qRef.current) {
     setLoading(true);
     setNotice("");
 
@@ -203,20 +208,31 @@ export default function NewsAdmin() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [api, filter]);
 
-  async function loadStats() {
+  const loadStats = useCallback(async function loadStats() {
     try {
       const data =
         await api(
           "/api/workspace/news/stats"
         );
 
-      setCounts(
-        data.counts || counts
-      );
+      if (data.counts) {
+        setCounts(data.counts);
+      }
     } catch {}
-  }
+  }, [api]);
+
+  useEffect(() => {
+    if (!key) return;
+
+    const timer = window.setTimeout(() => {
+      void load();
+      void loadStats();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [key, load, loadStats]);
 
   function unlock(
     event: FormEvent
@@ -488,7 +504,7 @@ export default function NewsAdmin() {
         );
 
       setForm(
-        (old: any) => ({
+        (old: NewsForm) => ({
           ...old,
 
           [`title_${target}`]:
@@ -536,7 +552,7 @@ export default function NewsAdmin() {
     value: string
   ) =>
     setForm(
-      (old: any) => ({
+      (old: NewsForm) => ({
         ...old,
         [name]: value,
       })
@@ -1369,11 +1385,13 @@ export default function NewsAdmin() {
 
             {form.cover_url ? (
               <div className="mt-5 overflow-hidden rounded-2xl bg-slate-100">
-                <img
+                <Image
                   src={
                     form.cover_url
                   }
                   alt=""
+                  width={1600}
+                  height={800}
                   className="aspect-[16/8] w-full object-cover"
                 />
               </div>

@@ -46,8 +46,8 @@ function normalizePublishedAt(value: unknown, status: string) {
   return parsed.toISOString();
 }
 
-function makePayload(body: any) {
-  const status = ["draft", "published", "archived"].includes(body?.status)
+function makePayload(body: Record<string, unknown>) {
+  const status = typeof body.status === "string" && ["draft", "published", "archived"].includes(body.status)
     ? body.status
     : "draft";
 
@@ -69,7 +69,10 @@ function makePayload(body: any) {
   };
 }
 
-async function revision(newsId: string, snapshot: any) {
+async function revision(
+  newsId: string,
+  snapshot: Record<string, unknown>
+) {
   const { error } = await db().from("company_news_revisions").insert({
     news_id: newsId,
     snapshot,

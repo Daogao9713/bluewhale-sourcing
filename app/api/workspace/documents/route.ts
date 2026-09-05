@@ -8,7 +8,7 @@ function auth(req:Request){ const a=verifyWorkspaceKey(req); return a.ok?null:Ne
 export async function GET(req:Request){
   const blocked=auth(req); if(blocked)return blocked;
   try { return NextResponse.json({success:true,documents:await listDocuments()}); }
-  catch(e:any){ console.error("[documents:get]",e); return NextResponse.json({success:false,error:"Failed to load documents."},{status:500}); }
+  catch(e:unknown){ console.error("[documents:get]",e); return NextResponse.json({success:false,error:"Failed to load documents."},{status:500}); }
 }
 
 export async function POST(req:Request){
@@ -17,7 +17,7 @@ export async function POST(req:Request){
     const b=await req.json();
     const type=["quotation","contract","purchase_order","report"].includes(b.document_type)?b.document_type:"quotation";
     const items=Array.isArray(b.items)?b.items.slice(0,100):[];
-    const subtotal=items.reduce((n:number,x:any)=>n+(Number(x.quantity)||0)*(Number(x.unit_price)||0),0);
+    const subtotal=items.reduce((n:number,x:Record<string, unknown>)=>n+(Number(x.quantity)||0)*(Number(x.unit_price)||0),0);
     const tax=Number(b.tax)||0;
     const row={
       document_no: nextDocumentNo(type), document_type:type,
@@ -33,5 +33,5 @@ export async function POST(req:Request){
     if(error)throw error;
     await audit("create","business_document",data.id,{document_no:data.document_no,type});
     return NextResponse.json({success:true,document:data});
-  }catch(e:any){console.error("[documents:post]",e);return NextResponse.json({success:false,error:e.message||"Create failed."},{status:500});}
+  }catch(e:unknown){console.error("[documents:post]",e);return NextResponse.json({success:false,error:e instanceof Error?e.message:"Create failed."},{status:500});}
 }

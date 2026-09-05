@@ -91,7 +91,7 @@ export default function FloatingAI() {
   const [busy, setBusy] = useState(false);
 
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [intent, setIntent] =
+  const [, setIntent] =
     useState<AssistantIntent>("unknown");
   const [action, setAction] =
     useState<AssistantAction>("none");
@@ -105,7 +105,8 @@ export default function FloatingAI() {
     useRef(false);
 
   useEffect(() => {
-    try {
+    const timer = window.setTimeout(() => {
+      try {
       const stored = window.sessionStorage.getItem(
         PROJECT_CONTEXT_STORAGE_KEY
       );
@@ -128,9 +129,12 @@ export default function FloatingAI() {
         "[FloatingAI:restore-project-context]",
         error
       );
-    } finally {
-      projectContextHydratedRef.current = true;
-    }
+      } finally {
+        projectContextHydratedRef.current = true;
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {

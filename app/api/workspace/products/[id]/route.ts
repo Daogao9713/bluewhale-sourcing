@@ -13,7 +13,7 @@ export async function PATCH(
 
   const { id } = await params;
   const b = await req.json();
-  const allowed: any = {};
+  const allowed: Record<string, unknown> = {};
 
   for (const k of [
     "model",

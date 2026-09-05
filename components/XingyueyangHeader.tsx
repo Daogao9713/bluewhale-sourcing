@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
@@ -18,7 +19,11 @@ export default function XingyueyangHeader() {
 
   // 路由变化后自动关闭手机菜单
   useEffect(() => {
-    setMenuOpen(false);
+    const timer = window.setTimeout(() => {
+      setMenuOpen(false);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [pathname]);
 
   // 打开菜单时锁定页面滚动
@@ -61,9 +66,11 @@ export default function XingyueyangHeader() {
             onClick={() => setMenuOpen(false)}
           >
             <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-white sm:h-11 sm:w-11">
-              <img
+              <Image
                 src="/xingyueyang-logo.png"
                 alt="江苏星玥阳科技有限公司"
+                width={82}
+                height={82}
                 className="absolute left-1/2 top-0 h-[76px] w-auto max-w-none -translate-x-1/2 sm:h-[82px]"
               />
             </div>

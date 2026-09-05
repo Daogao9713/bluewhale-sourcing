@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import XingyueyangHeader from "@/components/XingyueyangHeader";
 import { publicProduct } from "@/lib/products/server";
@@ -7,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const p: any = await publicProduct(slug);
+  const p = await publicProduct(slug);
 
   if (!p) notFound();
 
@@ -20,7 +21,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
         <div className="mt-10 grid items-center gap-12 lg:grid-cols-2">
           <div className="aspect-[4/3] rounded-[32px] bg-[#eef0f2]">
             {p.image_url ? (
-              <img src={p.image_url} className="h-full w-full object-contain p-8" alt={p.name} />
+              <Image src={p.image_url} width={960} height={720} className="h-full w-full object-contain p-8" alt={p.name || ""} />
             ) : (
               <div className="grid h-full place-items-center text-slate-400">设备图片待上传</div>
             )}
