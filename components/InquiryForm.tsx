@@ -1,13 +1,98 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  PROJECT_CONTEXT_STORAGE_KEY,
+  type ProjectContext,
+} from "@/lib/ai/project-context";
+
 import { useSiteLanguage } from "@/components/site/SiteLanguageProvider";
+
 
 export default function InquiryForm() {
   const router = useRouter();
   const { lang } = useSiteLanguage();
   const [loading, setLoading] = useState(false);
+  const [aiContext, setAiContext] =
+    useState<ProjectContext | null>(null);
+  const [aiPrefillReady, setAiPrefillReady] =
+    useState(false);
+
+  useEffect(() => {
+    try {
+      const stored =
+        window.sessionStorage.getItem(
+          PROJECT_CONTEXT_STORAGE_KEY
+        );
+
+      if (!stored) {
+        setAiPrefillReady(true);
+        return;
+      }
+
+      const parsed = JSON.parse(
+        stored
+      ) as ProjectContext;
+
+      if (
+        !parsed ||
+        typeof parsed !== "object"
+      ) {
+        setAiPrefillReady(true);
+        return;
+      }
+
+      setAiContext(parsed);
+    } catch (error) {
+      console.error(
+        "[InquiryForm:project-context]",
+        error
+      );
+    } finally {
+      setAiPrefillReady(true);
+    }
+  }, []);
+
+  function buildProjectMessage(
+    context: ProjectContext | null
+  ) {
+    if (!context) {
+      return "";
+    }
+
+    const lines: string[] = [];
+
+    if (context.industry) {
+      lines.push(
+        `应用行业：${context.industry}`
+      );
+    }
+
+    if (context.target) {
+      lines.push(
+        `检测 / 监测对象：${context.target}`
+      );
+    }
+
+    if (context.integration) {
+      lines.push(
+        `系统集成需求：${context.integration}`
+      );
+    }
+
+    if (context.requirement) {
+      lines.push(
+        `项目需求：${context.requirement}`
+      );
+    }
+
+    return lines.join("\n");
+  }
 
   const t = {
     zh: {
@@ -94,6 +179,18 @@ export default function InquiryForm() {
 
       if (res.ok) {
         form.reset();
+
+        try {
+          window.sessionStorage.removeItem(
+            PROJECT_CONTEXT_STORAGE_KEY
+          );
+        } catch (error) {
+          console.error(
+            "[InquiryForm:clear-project-context]",
+            error
+          );
+        }
+
         router.push("/inquiry/success");
       } else {
         const errorData = await res.json().catch(() => null);
@@ -116,6 +213,18 @@ export default function InquiryForm() {
       onSubmit={handleSubmit}
       className="xy-glass-panel space-y-6 rounded-[32px] p-6 sm:p-8 lg:p-10"
     >
+      {aiContext && (
+        <div className="rounded-2xl border border-amber-200/70 bg-amber-50/60 px-4 py-3">
+          <p className="text-xs font-semibold text-amber-800">
+            已根据智能顾问对话整理项目需求
+          </p>
+
+          <p className="mt-1 text-xs leading-5 text-slate-500">
+            以下内容仅作为咨询草稿，请确认并根据实际项目情况修改后再提交。
+          </p>
+        </div>
+      )}
+
       <div className="grid gap-6 md:grid-cols-2">
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">{t.company}</label>
@@ -157,12 +266,28 @@ export default function InquiryForm() {
 
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">{t.product}</label>
-          <input name="productName" className={inputClass} placeholder={t.product} />
+          <input
+            key={`product-${aiContext?.product || ""}`}
+            name="productName"
+            className={inputClass}
+            placeholder={t.product}
+             defaultValue={
+               aiContext?.product || ""
+               }
+              />
         </div>
 
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">{t.model}</label>
-          <input name="modelNumber" className={inputClass} placeholder={t.model} />
+          <input
+             key={`model-${aiContext?.model || ""}`}
+              name="modelNumber"
+               className={inputClass}
+                placeholder={t.model}
+                  defaultValue={
+                   aiContext?.model || ""
+                    }
+                     />
         </div>
 
         <div>
@@ -181,9 +306,17 @@ export default function InquiryForm() {
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">{t.detail}</label>
         <textarea
+          key={`message-${
+            aiPrefillReady
+              ? JSON.stringify(aiContext)
+              : "loading"
+          }`}
           name="message"
           rows={7}
           className={inputClass}
+          defaultValue={
+            buildProjectMessage(aiContext)
+          }
           placeholder={t.detailPh}
         />
       </div>

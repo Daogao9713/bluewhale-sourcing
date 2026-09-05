@@ -10,6 +10,12 @@ import {
 
 import { usePathname, useRouter } from "next/navigation";
 
+import {
+  EMPTY_PROJECT_CONTEXT,
+  PROJECT_CONTEXT_STORAGE_KEY,
+  type ProjectContext,
+} from "@/lib/ai/project-context";
+
 /* =========================================================
    X0.45 · Intelligent Site Advisor
    ---------------------------------------------------------
@@ -49,8 +55,12 @@ type AssistantPayload = {
   intent?: AssistantIntent;
   suggestions?: string[];
   action?: AssistantAction;
+  projectContext?: ProjectContext;
   error?: string;
 };
+
+
+
 
 const initialSuggestions = [
   {
@@ -85,9 +95,78 @@ export default function FloatingAI() {
     useState<AssistantIntent>("unknown");
   const [action, setAction] =
     useState<AssistantAction>("none");
+  
+    const [projectContext, setProjectContext] =
+    useState<ProjectContext>(EMPTY_PROJECT_CONTEXT);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const conversationRef = useRef<HTMLDivElement>(null);
+  const projectContextHydratedRef =
+    useRef(false);
+
+  useEffect(() => {
+    try {
+      const stored = window.sessionStorage.getItem(
+        PROJECT_CONTEXT_STORAGE_KEY
+      );
+
+      if (stored) {
+        const parsed = JSON.parse(stored);
+
+        if (
+          parsed &&
+          typeof parsed === "object"
+        ) {
+          setProjectContext({
+            ...EMPTY_PROJECT_CONTEXT,
+            ...parsed,
+          });
+        }
+      }
+    } catch (error) {
+      console.error(
+        "[FloatingAI:restore-project-context]",
+        error
+      );
+    } finally {
+      projectContextHydratedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!projectContextHydratedRef.current) {
+      return;
+    }
+
+    try {
+      const hasContext = Boolean(
+        projectContext.industry ||
+          projectContext.target ||
+          projectContext.product ||
+          projectContext.model ||
+          projectContext.integration ||
+          projectContext.requirement
+      );
+
+      if (!hasContext) {
+        window.sessionStorage.removeItem(
+          PROJECT_CONTEXT_STORAGE_KEY
+        );
+
+        return;
+      }
+
+      window.sessionStorage.setItem(
+        PROJECT_CONTEXT_STORAGE_KEY,
+        JSON.stringify(projectContext)
+      );
+    } catch (error) {
+      console.error(
+        "[FloatingAI:save-project-context]",
+        error
+      );
+    }
+  }, [projectContext]);
 
   /* =========================================================
      Open / Close behavior
@@ -135,15 +214,23 @@ export default function FloatingAI() {
      Auto scroll conversation
      ========================================================= */
 
-  useEffect(() => {
-    if (!conversationRef.current) return;
+ useEffect(() => {
+  if (!conversationRef.current) return;
 
-    conversationRef.current.scrollTo({
-      top: conversationRef.current.scrollHeight,
-      behavior: "smooth",
-    });
-  }, [messages, busy]);
+  const reduceMotion =
+    window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
 
+  conversationRef.current.scrollTo({
+    top:
+      conversationRef.current.scrollHeight,
+
+    behavior: reduceMotion
+      ? "auto"
+      : "smooth",
+  });
+}, [messages, busy]);
   /* =========================================================
      AI request
      ========================================================= */
@@ -192,10 +279,11 @@ export default function FloatingAI() {
           },
 
           body: JSON.stringify({
-            message: clean,
-            history,
-            pathname,
-          }),
+           message: clean,
+           history,
+           pathname,
+          projectContext,
+       }),
         }
       );
 
@@ -249,6 +337,12 @@ export default function FloatingAI() {
           ? payload.suggestions.slice(0, 3)
           : []
       );
+
+      if (payload.projectContext) {
+        setProjectContext(
+          payload.projectContext
+        );
+      }
     } catch (error) {
       console.error(
         "[FloatingAI]",
@@ -331,9 +425,20 @@ export default function FloatingAI() {
     setIntent("unknown");
     setAction("none");
 
-    window.setTimeout(() => {
-      textareaRef.current?.focus();
-    }, 50);
+    setProjectContext({
+  ...EMPTY_PROJECT_CONTEXT,
+});
+
+   try {
+  window.sessionStorage.removeItem(
+    PROJECT_CONTEXT_STORAGE_KEY
+  );
+} catch (error) {
+  console.error(
+    "[FloatingAI:clear-project-context]",
+    error
+  );
+}
   }
 
   /* =========================================================
@@ -358,9 +463,21 @@ export default function FloatingAI() {
         break;
 
       case "consult_project":
-        setOpen(false);
-        router.push("/inquiry");
-        break;
+  try {
+    window.sessionStorage.setItem(
+      PROJECT_CONTEXT_STORAGE_KEY,
+      JSON.stringify(projectContext)
+    );
+  } catch (error) {
+    console.error(
+      "[FloatingAI:project-handoff]",
+      error
+    );
+  }
+
+  setOpen(false);
+  router.push("/inquiry");
+  break;
 
       default:
         break;

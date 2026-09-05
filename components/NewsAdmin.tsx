@@ -1,5 +1,6 @@
 "use client";
 
+import { ProjectContext } from "@/lib/ai/project-context";
 import Link from "next/link";
 import {
   FormEvent,
@@ -73,6 +74,12 @@ export default function NewsAdmin() {
 
   const [loading, setLoading] =
     useState(false);
+
+  const [aiContext, setAiContext] =
+  useState<ProjectContext | null>(null);
+
+  const [aiPrefillReady, setAiPrefillReady] =
+  useState(false);
 
   const [translating, setTranslating] =
     useState<"" | "ja" | "en">("");

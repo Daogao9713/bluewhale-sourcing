@@ -1,5 +1,9 @@
 import "server-only";
 
+import {
+  EMPTY_PROJECT_CONTEXT,
+  type ProjectContext,
+} from "@/lib/ai/project-context";
 import { company } from "@/lib/xingyueyang";
 
 /* =========================================================
@@ -46,25 +50,6 @@ export type AssistantAction =
   | "consult_project";
 
 /* =========================================================
-   Project Context
-   ---------------------------------------------------------
-   Machine-readable memory of the user's industrial project.
-
-   Keep this deliberately small.
-   It is not a CRM record and must never invent missing data.
-   ========================================================= */
-
-export type ProjectContext = {
-  industry: string | null;
-  target: string | null;
-  product: string | null;
-  model: string | null;
-  integration: string | null;
-  requirement: string | null;
-  projectIntent: boolean;
-};
-
-/* =========================================================
    Structured AI response
    ========================================================= */
 
@@ -96,22 +81,6 @@ export type AdvisorProduct = {
   status?: unknown;
   [key: string]: unknown;
 };
-
-/* =========================================================
-   Defaults
-   ========================================================= */
-
-export function emptyProjectContext(): ProjectContext {
-  return {
-    industry: null,
-    target: null,
-    product: null,
-    model: null,
-    integration: null,
-    requirement: null,
-    projectIntent: false,
-  };
-}
 
 /* =========================================================
    Text helpers
@@ -259,7 +228,7 @@ export function productSlugFromPathname(
 export function normalizeProjectContext(
   value: unknown
 ): ProjectContext {
-  const empty = emptyProjectContext();
+  const empty = { ...EMPTY_PROJECT_CONTEXT };
 
   if (
     !value ||
