@@ -8,6 +8,9 @@ import {
   readJsonBody,
 } from "@/lib/security/request";
 
+
+import { checkRateLimit } from "@/lib/security/rate-limit";
+
 import {
   publicProduct,
   publicProducts,
@@ -95,6 +98,31 @@ export async function POST(req: Request) {
       normalizeProjectContext(
         body?.projectContext
       );
+
+    /* -------------------------------------------------------
+       Rate limiting
+       ------------------------------------------------------- */
+
+    const rateLimit = await checkRateLimit(req, {
+      scope: "site-assistant",
+      limit: 20,
+      windowSeconds: 60,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Too many requests. Please try again shortly.",
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": "60",
+          },
+        }
+      );
+    }
 
     /* -------------------------------------------------------
        CMS grounding

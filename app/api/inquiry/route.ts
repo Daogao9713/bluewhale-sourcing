@@ -3,9 +3,154 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { resend } from "@/lib/resend";
 import {
   RequestValidationError,
+  cleanString,
   objectBody,
   readJsonBody,
 } from "@/lib/security/request";
+
+import { checkRateLimit } from "@/lib/security/rate-limit";
+
+
+
+const EMAIL_PATTERN =
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const ALLOWED_LANGUAGES = new Set([
+  "zh",
+  "en",
+  "ja",
+]);
+
+function optionalString(
+  value: unknown,
+  maxLength: number
+) {
+  return cleanString(value, maxLength);
+}
+
+function requiredEmail(value: unknown) {
+  if (typeof value !== "string") {
+    throw new RequestValidationError(
+      "Valid email is required.",
+      400
+    );
+  }
+
+  const email = value
+    .trim()
+    .toLowerCase();
+
+  if (
+    !email ||
+    email.length > 254 ||
+    !EMAIL_PATTERN.test(email)
+  ) {
+    throw new RequestValidationError(
+      "Valid email is required.",
+      400
+    );
+  }
+
+  return email;
+}
+
+function normalizeLanguage(
+  value: unknown
+) {
+  const language =
+    cleanString(value, 8).toLowerCase();
+
+  return ALLOWED_LANGUAGES.has(language)
+    ? language
+    : "";
+}
+
+function normalizeBoolean(
+  value: unknown
+) {
+  return value === true;
+}
+
+function validateInquiry(
+  body: Record<string, unknown>
+) {
+  return {
+    companyName: optionalString(
+      body.companyName,
+      200
+    ),
+    contactName: optionalString(
+      body.contactName,
+      120
+    ),
+    email: requiredEmail(body.email),
+    phone: optionalString(
+      body.phone,
+      80
+    ),
+    country: optionalString(
+      body.country,
+      120
+    ),
+    preferredLanguage:
+      normalizeLanguage(
+        body.preferredLanguage
+      ),
+    productName: optionalString(
+      body.productName,
+      240
+    ),
+    modelNumber: optionalString(
+      body.modelNumber,
+      160
+    ),
+    quantity: optionalString(
+      body.quantity,
+      80
+    ),
+    needsEms: normalizeBoolean(
+      body.needsEms
+    ),
+    message: optionalString(
+      body.message,
+      5000
+    ),
+  };
+}
+
+function escapeHtml(
+  value: unknown
+) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function emailValue(
+  value: unknown
+) {
+  const text = String(value ?? "").trim();
+
+  return text
+    ? escapeHtml(text)
+    : "-";
+}
+
+function emailMultilineValue(
+  value: unknown
+) {
+  const text = String(value ?? "").trim();
+
+  return text
+    ? escapeHtml(text).replace(
+        /\r?\n/g,
+        "<br />"
+      )
+    : "-";
+}
 
 export async function POST(req: Request) {
   try {
@@ -14,25 +159,49 @@ export async function POST(req: Request) {
     );
 
     const {
-      companyName,
-      contactName,
-      email,
-      phone,
-      country,
-      preferredLanguage,
-      productName,
-      modelNumber,
-      quantity,
-      needsEms,
-      message,
-    } = body;
+  companyName,
+  contactName,
+  email,
+  phone,
+  country,
+  preferredLanguage,
+  productName,
+  modelNumber,
+  quantity,
+  needsEms,
+  message,
+} = validateInquiry(body);
 
-    if (!email) {
-      return NextResponse.json(
-        { error: "Email is required" },
-        { status: 400 }
-      );
+
+
+const rateLimit =
+  await checkRateLimit(req, {
+    scope: "inquiry",
+    limit: 5,
+    windowSeconds: 60 * 60,
+  });
+
+if (!rateLimit.allowed) {
+  return NextResponse.json(
+    {
+      success: false,
+      error:
+        "Too many inquiries. Please try again later.",
+    },
+    {
+      status: 429,
+      headers: {
+        "Retry-After": "3600",
+      },
     }
+  );
+}
+
+
+
+
+
+
 
     // 1. 先保存到 Supabase
     const { data, error: insertError } = await supabaseAdmin
@@ -73,25 +242,25 @@ export async function POST(req: Request) {
         to: process.env.NOTIFICATION_EMAIL!,
         subject: "新的海外采购询价",
         html: `
-          <h2>收到新的海外采购询价</h2>
+            <h2>收到新的海外采购询价</h2>
 
-          <p><strong>公司：</strong>${companyName || "-"}</p>
-          <p><strong>联系人：</strong>${contactName || "-"}</p>
-          <p><strong>邮箱：</strong>${email}</p>
-          <p><strong>电话：</strong>${phone || "-"}</p>
-          <p><strong>国家：</strong>${country || "-"}</p>
-          <p><strong>希望语言：</strong>${preferredLanguage || "-"}</p>
+            <p><strong>公司：</strong>${emailValue(companyName)}</p>
+            <p><strong>联系人：</strong>${emailValue(contactName)}</p>
+            <p><strong>邮箱：</strong>${emailValue(email)}</p>
+            <p><strong>电话：</strong>${emailValue(phone)}</p>
+            <p><strong>国家：</strong>${emailValue(country)}</p>
+            <p><strong>希望语言：</strong>${emailValue(preferredLanguage)}</p>
 
-          <hr />
+           <hr />
 
-          <p><strong>产品名称：</strong>${productName || "-"}</p>
-          <p><strong>产品型号：</strong>${modelNumber || "-"}</p>
-          <p><strong>采购数量：</strong>${quantity || "-"}</p>
-          <p><strong>是否需要 EMS：</strong>${needsEms ? "是" : "否"}</p>
+  <p><strong>产品名称：</strong>${emailValue(productName)}</p>
+  <p><strong>产品型号：</strong>${emailValue(modelNumber)}</p>
+  <p><strong>采购数量：</strong>${emailValue(quantity)}</p>
+  <p><strong>是否需要 EMS：</strong>${needsEms ? "是" : "否"}</p>
 
-          <p><strong>详细需求：</strong></p>
-          <p>${message || "-"}</p>
-        `,
+  <p><strong>详细需求：</strong></p>
+  <p>${emailMultilineValue(message)}</p>
+`,
       });
 
       console.log("Resend email result:", emailResult);
