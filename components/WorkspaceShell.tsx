@@ -15,6 +15,27 @@ export default function WorkspaceShell(){
  const t=copy[lang];
  useEffect(()=>{setKey(sessionStorage.getItem("bluewhale_admin_key")||"");setLang((localStorage.getItem("bluewhale_workspace_lang") as Lang)||"zh")},[]);
  useEffect(()=>{if(key)load()},[key]);
+ useEffect(() => {
+  if (!mobile) return;
+
+  const previousOverflow = document.body.style.overflow;
+
+  document.body.style.overflow = "hidden";
+
+  function onKeyDown(event: KeyboardEvent) {
+    if (event.key === "Escape") {
+      setMobile(false);
+    }
+  }
+
+  window.addEventListener("keydown", onKeyDown);
+
+  return () => {
+    document.body.style.overflow = previousOverflow;
+    window.removeEventListener("keydown", onKeyDown);
+  };
+}, [mobile]);
+
  async function request(path:string,init:RequestInit={}){
   const h=new Headers(init.headers); if(key)h.set("x-admin-key",key); if(init.body)h.set("Content-Type","application/json");
   const r=await fetch(path,{...init,headers:h,credentials:"same-origin",cache:"no-store"}); const p=await r.json().catch(()=>({}));
@@ -25,11 +46,23 @@ export default function WorkspaceShell(){
  function switchLang(x:Lang){setLang(x);localStorage.setItem("bluewhale_workspace_lang",x)}
  if(!key)return <main className="xy-workspace relative grid min-h-screen place-items-center overflow-hidden p-5"><div className="pointer-events-none absolute left-[10%] top-[8%] h-72 w-72 rounded-full bg-blue-300/10 blur-[100px]"/><div className="pointer-events-none absolute bottom-[5%] right-[8%] h-72 w-72 rounded-full bg-amber-300/10 blur-[100px]"/><form onSubmit={unlock} className="xy-workspace-panel relative w-full max-w-[440px] rounded-[32px] p-7 sm:p-9"><div className="flex items-center gap-3"><div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-white/70 bg-white/50"><img src="/xingyueyang-logo.png" alt="" className="absolute left-1/2 top-0 h-[84px] w-auto max-w-none -translate-x-1/2"/></div><div><div className="text-sm font-semibold">江苏星玥阳科技有限公司</div><div className="mt-0.5 text-[9px] font-bold tracking-[.18em] text-slate-400">UNIVERSE TECH</div></div></div><div className="mt-10 text-[9px] font-bold tracking-[.2em] text-amber-600">ENTERPRISE WORKSPACE</div><h1 className="mt-2 text-3xl font-semibold tracking-[-.04em]">Industrial OS</h1><p className="mt-3 text-sm leading-6 text-slate-500">企业运营、内容管理与工业数据工作台</p><input className="xy-cms-field mt-8 px-4 py-3.5" type="password" value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Workspace admin key"/><button className="xy-cms-primary mt-3 w-full rounded-2xl py-3.5 text-sm font-semibold">进入工作台</button><div className="mt-6 flex items-center justify-between border-t border-slate-200/50 pt-5 text-[10px] text-slate-400"><span>XINGYUEYANG INDUSTRIAL OS</span><span>X0.44</span></div></form></main>;
  const nav:[Tab|string,string,string][]=[["dashboard",t.dashboard,"DB"],["news",t.news,"NW"],["productcms",lang==="zh"?"设备管理":"Product CMS","PD"],["casecms",lang==="zh"?"工程案例":"Case CMS","CS"],["projects",t.projects,"PR"],["suppliers",t.suppliers,"SP"],["rfq",t.rfq,"RQ"],["inquiries",t.inquiries,"IN"],["documents",t.documents,"DC"],["integrations",t.integrations,"IX"],["ai",t.ai,"AI"]];
+  
   return <div className="xy-workspace min-h-screen text-slate-950">
-  <aside
-  className={`xy-workspace-sidebar fixed inset-y-0 left-0 z-50 w-[260px] text-white transition-transform duration-300 lg:translate-x-0 ${
-    mobile ? "translate-x-0" : "-translate-x-full"
+  
+  <button
+  type="button"
+  aria-label="关闭工作台菜单"
+  onClick={() => setMobile(false)}
+  className={`fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-[3px] transition-opacity duration-300 lg:hidden ${
+    mobile
+      ? "pointer-events-auto opacity-100"
+      : "pointer-events-none opacity-0"
   }`}
+/>
+  <aside
+    className={`xy-workspace-sidebar fixed inset-y-0 left-0 z-50 w-[260px] text-white transition-transform duration-300 lg:translate-x-0 ${
+      mobile ? "translate-x-0" : "-translate-x-full"
+    }`}
   >
    <div className="flex h-full flex-col"><div className="border-b border-white/10 p-5">
   <div className="flex items-center gap-3">
@@ -63,7 +96,7 @@ export default function WorkspaceShell(){
     </span>
   </div>
 </div>
-  <nav className="flex-1 space-y-1 overflow-y-auto p-3">{nav.map(([id,label,short])=>id==="news"?<Link key={id} href="/workspace/news" className="xy-workspace-nav flex gap-3 rounded-xl px-3 py-3 text-sm text-slate-400"><b className="w-7 text-[10px]">{short}</b>{label}</Link>:id==="productcms"?<Link key={id} href="/workspace/products" className="xy-workspace-nav flex gap-3 rounded-xl px-3 py-3 text-sm text-slate-400"><b className="w-7 text-[10px]">{short}</b>{label}</Link>:id==="casecms"?<Link key={id} href="/workspace/cases" className="xy-workspace-nav flex gap-3 rounded-xl px-3 py-3 text-sm text-slate-400"><b className="w-7 text-[10px]">{short}</b>{label}</Link>:<button key={id} onClick={()=>{setTab(id as Tab);setMobile(false)}} className={`xy-workspace-nav flex w-full gap-3 rounded-xl px-3 py-3 text-left text-sm ${tab===id?"xy-workspace-nav-active":"text-slate-400"}`}><b className="w-7 text-[10px]">{short}</b>{label}</button>)}</nav>
+  <nav className="flex-1 space-y-1 overflow-y-auto p-3">{nav.map(([id,label,short])=>id==="news"?<Link key={id} href="/workspace/news" onClick={() => setMobile(false)} className="xy-workspace-nav flex gap-3 rounded-xl px-3 py-3 text-sm text-slate-400"><b className="w-7 text-[10px]">{short}</b>{label}</Link>:id==="productcms"?<Link key={id} href="/workspace/products" onClick={() => setMobile(false)} className="xy-workspace-nav flex gap-3 rounded-xl px-3 py-3 text-sm text-slate-400"><b className="w-7 text-[10px]">{short}</b>{label}</Link>:id==="casecms"?<Link key={id} href="/workspace/cases" onClick={() => setMobile(false)} className="xy-workspace-nav flex gap-3 rounded-xl px-3 py-3 text-sm text-slate-400"><b className="w-7 text-[10px]">{short}</b>{label}</Link>:<button key={id} onClick={()=>{setTab(id as Tab);setMobile(false)}} className={`xy-workspace-nav flex w-full gap-3 rounded-xl px-3 py-3 text-left text-sm ${tab===id?"xy-workspace-nav-active":"text-slate-400"}`}><b className="w-7 text-[10px]">{short}</b>{label}</button>)}</nav>
   <div className="border-t border-white/10 p-3"><Link href="/" className="block px-3 py-2 text-xs text-slate-400">{t.public} ↗</Link><button onClick={()=>{sessionStorage.removeItem("bluewhale_admin_key");setKey("")}} className="px-3 py-2 text-xs text-slate-500">{t.lock}</button></div></div>
   </aside>
     <div className="lg:pl-[260px]"><header className="sticky top-0 z-30 px-3 pt-3 lg:px-6 lg:pt-4"><div className="xy-workspace-topbar flex min-h-16 items-center justify-between rounded-2xl px-4 lg:px-5"><div className="flex min-w-0 items-center gap-3"><button onClick={()=>setMobile(!mobile)} className="xy-glass-button rounded-xl px-3 py-2 text-xs lg:hidden">MENU</button><div className="min-w-0"><div className="truncate text-[9px] font-semibold tracking-[.15em] text-slate-400 sm:text-[10px]">JIANGSU XINGYUEYANG TECHNOLOGY</div><div className="mt-0.5 truncate text-sm font-semibold text-slate-900">{nav.find(x=>x[0]===tab)?.[1]}</div></div></div><div className="flex shrink-0 gap-2"><button onClick={()=>switchLang(lang==="zh"?"en":"zh")} className="xy-glass-button rounded-full px-3 py-2 text-xs">{lang==="zh"?"EN":"中文"}</button><button onClick={load} className="xy-glass-button hidden rounded-full px-3 py-2 text-xs sm:block">{t.refresh}</button></div></div></header>
@@ -76,6 +109,7 @@ export default function WorkspaceShell(){
   </main></div>
  </div>
 }
+
 function Dashboard({t,data,loading}:any){const cards=[["Projects",data.projects.length],["Suppliers",data.suppliers.length],["RFQ",data.rfqs.length],["Inquiries",data.inquiries.length]];return <><section className="xy-glass-dark xy-liquid overflow-hidden rounded-[2rem] p-6 text-white sm:p-7 lg:p-10"><p className="text-xs tracking-[.2em] text-cyan-400">{t.overview}</p><h2 className="mt-4 max-w-4xl text-3xl font-semibold tracking-[-.04em] sm:text-4xl lg:text-5xl">{t.hero}</h2><div className="mt-8 flex flex-wrap gap-2"><Link href="/workspace/news" className="rounded-full border border-white/10 bg-white/[.07] px-4 py-2 text-xs !text-white backdrop-blur-xl transition hover:bg-white/[.12]">{t.news}</Link><Link href="/" className="rounded-full border border-white/10 bg-white/[.07] px-4 py-2 text-xs !text-white backdrop-blur-xl transition hover:bg-white/[.12]">{t.public}</Link></div></section><section className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-4">{cards.map(([x,n])=><div key={x} className="xy-workspace-kpi rounded-3xl p-5 sm:p-6"><div className="text-[10px] font-semibold uppercase tracking-[.14em] text-slate-400">{x}</div><div className="mt-5 text-4xl font-semibold tracking-[-.04em] text-slate-950">{loading?"…":n}</div><div className="mt-5 h-px bg-gradient-to-r from-slate-200/70 to-transparent"/><div className="mt-3 text-[10px] text-slate-400">LIVE DATA</div></div>)}</section><section className="mt-5 grid gap-4 lg:grid-cols-3">{[["Documents","Quotation · Contract · PO · Report"],["Integrations","MES · ERP · WMS · Webhook"],["AI Copilot","Intent routing · compact context · token control"]].map(x=><div key={x[0]} className="xy-workspace-panel rounded-3xl p-6"><b>{x[0]}</b><p className="mt-2 text-sm text-slate-500">{x[1]}</p></div>)}</section></>}
 function TableModule({title,rows,t}:any){return <section><h2 className="text-3xl font-semibold">{title}</h2><div className="xy-workspace-table mt-5 overflow-x-auto rounded-3xl"><table className="min-w-[760px] w-full text-sm"><thead className="text-left text-[10px] font-semibold uppercase tracking-[.12em] text-slate-400"><tr><th className="p-4">Name</th><th className="p-4">Status</th><th className="p-4">Detail</th><th className="p-4">Date</th></tr></thead><tbody>{rows.map((r:any,i:number)=><tr key={r.id||i}><td className="p-4 font-medium">{r.name||r.company_name||r.title||r.product_name||r.contact_name||"—"}</td><td className="p-4">{r.status||r.category||"—"}</td><td className="p-4">{r.country||r.quantity||r.email||"—"}</td><td className="p-4">{r.created_at?new Date(r.created_at).toLocaleDateString():"—"}</td></tr>)}{!rows.length&&<tr><td colSpan={4} className="p-10 text-center text-slate-400">{t.empty}</td></tr>}</tbody></table></div></section>}
 function Documents({request,t}:any){const [docs,setDocs]=useState<any[]>([]);const [show,setShow]=useState(false);const [form,setForm]=useState<any>({document_type:"quotation",currency:"USD",items:[{description:"",quantity:1,unit_price:0}]});async function load(){const p=await request("/api/workspace/documents");setDocs(p.documents||[])}useEffect(()=>{load()},[]);async function create(e:FormEvent){e.preventDefault();await request("/api/workspace/documents",{method:"POST",body:JSON.stringify(form)});setShow(false);load()}return <section><div className="flex justify-between items-end"><div><h2 className="text-3xl font-semibold">{t.documents}</h2><p className="mt-2 text-sm text-slate-500">Quotation · Contract · Purchase Order · Report</p></div><button onClick={()=>setShow(!show)} className="rounded-xl bg-slate-950 px-4 py-3 text-xs text-white">{t.newDoc}</button></div>{show&&<form onSubmit={create} className="mt-5 rounded-3xl border bg-white p-5 grid gap-3 md:grid-cols-2"><select className="field" value={form.document_type} onChange={e=>setForm({...form,document_type:e.target.value})}><option value="quotation">{t.quotation}</option><option value="contract">{t.contract}</option><option value="purchase_order">{t.po}</option><option value="report">{t.report}</option></select><input className="field" required placeholder="Title" onChange={e=>setForm({...form,title:e.target.value})}/><input className="field" placeholder="Customer / Company" onChange={e=>setForm({...form,customer_name:e.target.value})}/><input className="field" placeholder="Email" onChange={e=>setForm({...form,customer_email:e.target.value})}/><input className="field" placeholder="Item description" onChange={e=>setForm({...form,items:[{...form.items[0],description:e.target.value}]})}/><div className="grid grid-cols-2 gap-2"><input className="field" type="number" placeholder="Qty" onChange={e=>setForm({...form,items:[{...form.items[0],quantity:Number(e.target.value)}]})}/><input className="field" type="number" placeholder="Unit price" onChange={e=>setForm({...form,items:[{...form.items[0],unit_price:Number(e.target.value)}]})}/></div><textarea className="field md:col-span-2" placeholder="Terms / Notes" onChange={e=>setForm({...form,terms:e.target.value})}/><button className="rounded-xl bg-cyan-700 px-4 py-3 text-xs text-white">Create Draft</button></form>}<div className="mt-5 grid gap-3">{docs.map(d=><div key={d.id} className="rounded-2xl border bg-white p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"><div><div className="text-xs text-cyan-700">{d.document_no} · {d.document_type}</div><b>{d.title}</b><div className="text-sm text-slate-500">{d.customer_name||"—"} · {d.currency} {d.total}</div></div><div className="flex gap-2"><a target="_blank" href={`/api/workspace/documents/${d.id}/export?format=html`} className="rounded-lg border px-3 py-2 text-xs">PDF / Print</a><a href={`/api/workspace/documents/${d.id}/export?format=excel`} className="rounded-lg border px-3 py-2 text-xs">Excel</a></div></div>)}</div></section>}
