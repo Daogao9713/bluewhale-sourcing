@@ -3,6 +3,12 @@ import { NextResponse } from "next/server";
 import { chat } from "@/lib/ai/server";
 
 import {
+  RequestValidationError,
+  objectBody,
+  readJsonBody,
+} from "@/lib/security/request";
+
+import {
   publicProduct,
   publicProducts,
 } from "@/lib/products/server";
@@ -44,7 +50,9 @@ const MAX_HISTORY_MESSAGE_LENGTH = 1200;
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const body = objectBody(
+      await readJsonBody(req, 20_000)
+    );
 
     /* -------------------------------------------------------
        Request normalization
@@ -240,19 +248,29 @@ export async function POST(req: Request) {
       },
     });
   } catch (error: unknown) {
+    if (
+      error instanceof
+      RequestValidationError
+    ) {
+      return NextResponse.json(
+        {
+          error: error.message,
+        },
+        {
+          status: error.status,
+        }
+      );
+    }
+
     console.error(
       "[site-assistant]",
       error
     );
 
-    const message =
-      error instanceof Error
-        ? error.message
-        : "AI unavailable.";
-
     return NextResponse.json(
       {
-        error: message,
+        error:
+          "AI service temporarily unavailable.",
       },
       {
         status: 500,

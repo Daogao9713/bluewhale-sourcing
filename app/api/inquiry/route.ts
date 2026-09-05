@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { resend } from "@/lib/resend";
+import {
+  RequestValidationError,
+  objectBody,
+  readJsonBody,
+} from "@/lib/security/request";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const body = objectBody(
+      await readJsonBody(req, 20_000)
+    );
 
     const {
       companyName,
@@ -101,6 +108,21 @@ export async function POST(req: Request) {
       { status: 200 }
     );
   } catch (error) {
+    if (
+      error instanceof
+      RequestValidationError
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error.message,
+        },
+        {
+          status: error.status,
+        }
+      );
+    }
+
     console.error("Inquiry API error:", error);
 
     return NextResponse.json(
