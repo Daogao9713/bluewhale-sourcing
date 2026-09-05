@@ -2005,6 +2005,459 @@ canvas {
   }
 }
 
+
+/* =========================================================
+   X0.45 · AI CONVERSATION
+   Multi-turn Industrial Glass
+   ========================================================= */
+
+.xy-ai-conversation {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  margin-top: 20px;
+
+  /*
+   * Conversation owns scrolling now.
+   * The modal itself should remain visually stable.
+   */
+  max-height: min(46vh, 430px);
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding: 2px 4px 8px 2px;
+
+  scroll-behavior: smooth;
+
+  scrollbar-width: thin;
+  scrollbar-color:
+    rgba(100, 116, 139, .22)
+    transparent;
+
+  overscroll-behavior: contain;
+}
+
+.xy-ai-conversation::-webkit-scrollbar {
+  width: 5px;
+}
+
+.xy-ai-conversation::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.xy-ai-conversation::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(100, 116, 139, .18);
+}
+
+.xy-ai-conversation::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, .3);
+}
+
+
+/* =========================================================
+   MESSAGE
+   ========================================================= */
+
+.xy-ai-message {
+  position: relative;
+
+  width: fit-content;
+  max-width: 88%;
+
+  animation:
+    xyAiMessageIn .3s ease both;
+}
+
+
+/* ---------------------------------------------------------
+   Assistant
+   --------------------------------------------------------- */
+
+.xy-ai-message.is-assistant {
+  align-self: flex-start;
+
+  padding: 15px 17px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, .72);
+
+  border-radius:
+    8px 20px 20px 20px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, .68),
+      rgba(248, 250, 252, .46)
+    );
+
+  box-shadow:
+    inset 0 1px 0
+      rgba(255, 255, 255, .92),
+
+    0 10px 28px
+      rgba(15, 23, 42, .045);
+
+  -webkit-backdrop-filter:
+    blur(12px)
+    saturate(120%);
+
+  backdrop-filter:
+    blur(12px)
+    saturate(120%);
+}
+
+
+/* ---------------------------------------------------------
+   User
+   --------------------------------------------------------- */
+
+.xy-ai-message.is-user {
+  align-self: flex-end;
+
+  padding: 13px 16px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, .08);
+
+  border-radius:
+    20px 8px 20px 20px;
+
+  color: rgba(255, 255, 255, .94);
+
+  background:
+    linear-gradient(
+      145deg,
+      #172337,
+      #07101d
+    );
+
+  box-shadow:
+    inset 0 1px 0
+      rgba(255, 255, 255, .09),
+
+    0 10px 28px
+      rgba(7, 16, 29, .13);
+}
+
+
+/* =========================================================
+   MESSAGE META
+   ========================================================= */
+
+.xy-ai-message-meta {
+  margin-bottom: 6px;
+
+  color: #a66d00;
+
+  font-size: 8px;
+  font-weight: 800;
+
+  letter-spacing: .1em;
+  line-height: 1;
+}
+
+.xy-ai-message.is-user
+.xy-ai-message-meta {
+  color:
+    rgba(255, 255, 255, .46);
+
+  text-align: right;
+}
+
+
+/* =========================================================
+   MESSAGE CONTENT
+   ========================================================= */
+
+.xy-ai-message-content {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+
+  color: #334155;
+
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.xy-ai-message.is-user
+.xy-ai-message-content {
+  color:
+    rgba(255, 255, 255, .92);
+}
+
+
+/* =========================================================
+   FOLLOW-UP QUESTIONS
+   ========================================================= */
+
+.xy-ai-followups {
+  position: relative;
+
+  margin-top: 3px;
+
+  padding-top: 4px;
+
+  animation:
+    xyAiFadeIn .3s ease both;
+}
+
+.xy-ai-followups-label {
+  margin:
+    0 0
+    8px 4px;
+
+  color: #94a3b8;
+
+  font-size: 8px;
+  font-weight: 750;
+
+  letter-spacing: .1em;
+
+  text-transform: uppercase;
+}
+
+
+/*
+ * Existing .xy-ai-suggestions can be reused,
+ * but inside conversation it should be tighter.
+ */
+
+.xy-ai-followups
+.xy-ai-suggestions {
+  margin-top: 0;
+
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 7px;
+}
+
+.xy-ai-followups
+.xy-ai-suggestion {
+  min-height: 36px;
+
+  width: auto;
+
+  flex:
+    0 1 auto;
+
+  padding:
+    8px 11px;
+
+  border-radius: 12px;
+
+  font-size: 10px;
+}
+
+
+/* =========================================================
+   STRUCTURED ACTION
+   ========================================================= */
+
+.xy-ai-action {
+  display: flex;
+
+  margin-top: 2px;
+
+  animation:
+    xyAiFadeIn .34s ease both;
+}
+
+.xy-ai-action-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 18px;
+
+  min-height: 44px;
+
+  padding:
+    10px
+    14px
+    10px
+    16px;
+
+  border:
+    1px solid
+    rgba(255, 181, 0, .22);
+
+  border-radius: 14px;
+
+  color: #704a00;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 191, 42, .13),
+      rgba(255, 255, 255, .58)
+    );
+
+  box-shadow:
+    inset 0 1px 0
+      rgba(255, 255, 255, .9),
+
+    0 8px 24px
+      rgba(166, 109, 0, .055);
+
+  cursor: pointer;
+
+  font: inherit;
+
+  font-size: 11px;
+  font-weight: 720;
+
+  transition:
+    border-color .2s ease,
+    background .2s ease,
+    box-shadow .2s ease,
+    transform .2s ease;
+}
+
+.xy-ai-action-button:hover {
+  border-color:
+    rgba(255, 181, 0, .38);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 191, 42, .19),
+      rgba(255, 255, 255, .72)
+    );
+
+  box-shadow:
+    inset 0 1px 0
+      rgba(255, 255, 255, .94),
+
+    0 10px 28px
+      rgba(166, 109, 0, .09);
+
+  transform:
+    translateY(-1px);
+}
+
+.xy-ai-action-button:active {
+  transform:
+    translateY(0)
+    scale(.985);
+}
+
+
+/* =========================================================
+   CONVERSATION TOOLBAR
+   ========================================================= */
+
+.xy-ai-conversation-toolbar {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 14px;
+
+  margin-top: 12px;
+
+  padding:
+    9px 4px
+    0;
+
+  border-top:
+    1px solid
+    rgba(100, 116, 139, .1);
+}
+
+.xy-ai-context {
+  display: flex;
+  align-items: center;
+
+  gap: 6px;
+
+  color: #94a3b8;
+
+  font-size: 8px;
+  font-weight: 750;
+
+  letter-spacing: .09em;
+}
+
+.xy-ai-context-dot {
+  width: 5px;
+  height: 5px;
+
+  flex: 0 0 auto;
+
+  border-radius: 50%;
+
+  background: #22c55e;
+
+  box-shadow:
+    0 0 8px
+    rgba(34, 197, 94, .34);
+}
+
+
+/* =========================================================
+   RESET
+   ========================================================= */
+
+.xy-ai-conversation-toolbar
+.xy-ai-reset {
+  padding: 4px 6px;
+
+  border-radius: 8px;
+
+  transition:
+    color .2s ease,
+    background .2s ease;
+}
+
+.xy-ai-conversation-toolbar
+.xy-ai-reset:hover {
+  color: #07101d;
+
+  background:
+    rgba(15, 23, 42, .045);
+}
+
+.xy-ai-conversation-toolbar
+.xy-ai-reset:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   MESSAGE ENTRANCE
+   ========================================================= */
+
+@keyframes xyAiMessageIn {
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(7px)
+      scale(.985);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
 /* =========================================================
    RESPONSE
    ========================================================= */
@@ -2406,6 +2859,60 @@ canvas {
     font-size: 12px;
   }
 
+  .xy-ai-conversation {
+    max-height: min(42dvh, 390px);
+
+    margin-top: 16px;
+
+    padding-right: 2px;
+
+    gap: 12px;
+  }
+
+  .xy-ai-message {
+    max-width: 92%;
+  }
+
+  .xy-ai-message.is-assistant {
+    padding: 13px 14px;
+
+    border-radius:
+      7px 17px 17px 17px;
+  }
+
+  .xy-ai-message.is-user {
+    padding: 12px 14px;
+
+    border-radius:
+      17px 7px 17px 17px;
+  }
+
+  .xy-ai-message-content {
+    font-size: 12px;
+    line-height: 1.75;
+  }
+
+  .xy-ai-followups
+  .xy-ai-suggestions {
+    display: grid;
+    grid-template-columns: 1fr;
+
+    gap: 7px;
+  }
+
+  .xy-ai-followups
+  .xy-ai-suggestion {
+    width: 100%;
+  }
+
+  .xy-ai-action-button {
+    width: 100%;
+  }
+
+  .xy-ai-conversation-toolbar {
+    margin-top: 10px;
+  }
+
   .xy-ai-suggestions {
     margin-top: 20px;
   }
@@ -2420,9 +2927,6 @@ canvas {
     min-height: 125px;
   }
 
-  .xy-ai-reply {
-    max-height: 210px;
-  }
 
   .xy-ai-shortcut {
     display: none;
@@ -2451,13 +2955,28 @@ canvas {
     transition: none !important;
   }
 
-  .xy-ai-thinking-dots span,
-  .xy-ai-send-loader,
-  .xy-ai-response,
-  .xy-ai-thinking {
-    animation: none !important;
-  }
+.xy-ai-thinking-dots span,
+.xy-ai-send-loader,
+.xy-ai-response,
+.xy-ai-thinking,
+.xy-ai-message,
+.xy-ai-followups,
+.xy-ai-action {
+  animation: none !important;
+}
 
+.xy-ai-conversation {
+  scroll-behavior: auto;
+}
+
+.xy-ai-action-button {
+  transition: none !important;
+}
+
+.xy-ai-action-button:hover,
+.xy-ai-action-button:active {
+  transform: none;
+}
   .xy-interactive:active,
   .xy-ai-orb:hover {
     transform: none;

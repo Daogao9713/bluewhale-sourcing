@@ -8,7 +8,51 @@ import {
   useState,
 } from "react";
 
-const suggestions = [
+import { usePathname, useRouter } from "next/navigation";
+
+/* =========================================================
+   X0.45 · Intelligent Site Advisor
+   ---------------------------------------------------------
+   - Multi-turn conversation
+   - Page awareness
+   - Dynamic AI suggestions
+   - Structured AI actions
+   - Project consultation handoff
+   ========================================================= */
+
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+type AssistantIntent =
+  | "product_selection"
+  | "product_detail"
+  | "technology"
+  | "solution"
+  | "integration"
+  | "project_consultation"
+  | "company"
+  | "general"
+  | "unknown";
+
+type AssistantAction =
+  | "none"
+  | "view_products"
+  | "view_technology"
+  | "view_solutions"
+  | "consult_project";
+
+type AssistantPayload = {
+  success?: boolean;
+  reply?: string;
+  intent?: AssistantIntent;
+  suggestions?: string[];
+  action?: AssistantAction;
+  error?: string;
+};
+
+const initialSuggestions = [
   {
     label: "煤电在线监测",
     text: "请介绍适合煤电行业的在线监测产品",
@@ -23,19 +67,31 @@ const suggestions = [
   },
 ];
 
+/* =========================================================
+   Component
+   ========================================================= */
+
 export default function FloatingAI() {
+  const pathname = usePathname();
+  const router = useRouter();
+
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
-  const [reply, setReply] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [busy, setBusy] = useState(false);
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const modalRef = useRef<HTMLElement>(null);
-  const closeRef = useRef<HTMLButtonElement>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [intent, setIntent] =
+    useState<AssistantIntent>("unknown");
+  const [action, setAction] =
+    useState<AssistantAction>("none");
 
-  /* -------------------------------------------------------
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const conversationRef = useRef<HTMLDivElement>(null);
+
+  /* =========================================================
      Open / Close behavior
-     ------------------------------------------------------- */
+     ========================================================= */
 
   useEffect(() => {
     if (!open) return;
@@ -44,92 +100,208 @@ export default function FloatingAI() {
       textareaRef.current?.focus();
     }, 220);
 
-    const previousOverflow = document.body.style.overflow;
+    const previousOverflow =
+      document.body.style.overflow;
+
     document.body.style.overflow = "hidden";
 
-    function onKeyDown(event: globalThis.KeyboardEvent) {
+    function onKeyDown(
+      event: globalThis.KeyboardEvent
+    ) {
       if (event.key === "Escape") {
         setOpen(false);
       }
     }
 
-    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener(
+      "keydown",
+      onKeyDown
+    );
 
     return () => {
       window.clearTimeout(timer);
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", onKeyDown);
+
+      document.body.style.overflow =
+        previousOverflow;
+
+      window.removeEventListener(
+        "keydown",
+        onKeyDown
+      );
     };
   }, [open]);
 
-  /* -------------------------------------------------------
+  /* =========================================================
+     Auto scroll conversation
+     ========================================================= */
+
+  useEffect(() => {
+    if (!conversationRef.current) return;
+
+    conversationRef.current.scrollTo({
+      top: conversationRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [messages, busy]);
+
+  /* =========================================================
      AI request
-     ------------------------------------------------------- */
+     ========================================================= */
 
   async function sendMessage(message: string) {
     const clean = message.trim();
 
     if (!clean || busy) return;
 
-    setQ(clean);
+    /*
+     * Important:
+     * history must be captured BEFORE adding the new
+     * user message because the API adds current message
+     * separately.
+     */
+    const history = messages.slice(-8);
+
+    const userMessage: ChatMessage = {
+      role: "user",
+      content: clean,
+    };
+
+    setMessages((current) => [
+      ...current,
+      userMessage,
+    ]);
+
+    setQ("");
     setBusy(true);
-    setReply("");
+
+    /*
+     * Previous suggestions/actions should not remain
+     * active while a new answer is being generated.
+     */
+    setSuggestions([]);
+    setAction("none");
 
     try {
-      const response = await fetch("/api/site-assistant", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: clean,
-        }),
-      });
+      const response = await fetch(
+        "/api/site-assistant",
+        {
+          method: "POST",
 
-      const contentType = response.headers.get("content-type") || "";
+          headers: {
+            "Content-Type": "application/json",
+          },
 
-      if (!contentType.includes("application/json")) {
-        throw new Error("Invalid AI response.");
+          body: JSON.stringify({
+            message: clean,
+            history,
+            pathname,
+          }),
+        }
+      );
+
+      const contentType =
+        response.headers.get("content-type") || "";
+
+      if (
+        !contentType.includes(
+          "application/json"
+        )
+      ) {
+        throw new Error(
+          "Invalid AI response."
+        );
       }
 
-      const payload = await response.json();
+      const payload: AssistantPayload =
+        await response.json();
 
       if (!response.ok) {
-        throw new Error(payload?.error || "AI request failed.");
+        throw new Error(
+          payload?.error ||
+            "AI request failed."
+        );
       }
 
-      setReply(
-        payload?.reply ||
-          payload?.error ||
-          "暂时无法回答这个问题，请联系星玥阳技术团队进一步确认。"
+      const reply =
+        payload.reply ||
+        "暂时无法回答这个问题，请联系星玥阳技术团队进一步确认。";
+
+      const assistantMessage: ChatMessage = {
+        role: "assistant",
+        content: reply,
+      };
+
+      setMessages((current) => [
+        ...current,
+        assistantMessage,
+      ]);
+
+      setIntent(
+        payload.intent || "unknown"
+      );
+
+      setAction(
+        payload.action || "none"
+      );
+
+      setSuggestions(
+        Array.isArray(payload.suggestions)
+          ? payload.suggestions.slice(0, 3)
+          : []
       );
     } catch (error) {
-      console.error("[FloatingAI]", error);
-
-      setReply(
-        "AI 服务暂时不可用。你仍可以通过官网联系方式咨询星玥阳技术团队。"
+      console.error(
+        "[FloatingAI]",
+        error
       );
+
+      const fallback: ChatMessage = {
+        role: "assistant",
+        content:
+          "AI 服务暂时不可用。你仍可以通过官网联系方式咨询星玥阳技术团队。",
+      };
+
+      setMessages((current) => [
+        ...current,
+        fallback,
+      ]);
+
+      setIntent("unknown");
+      setAction("none");
+      setSuggestions([]);
     } finally {
       setBusy(false);
     }
   }
 
-  async function ask(event: FormEvent<HTMLFormElement>) {
+  /* =========================================================
+     Form submit
+     ========================================================= */
+
+  async function ask(
+    event: FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
+
     await sendMessage(q);
   }
 
-  async function askSuggestion(text: string) {
+  /* =========================================================
+     Suggestion
+     ========================================================= */
+
+  async function askSuggestion(
+    text: string
+  ) {
     if (busy) return;
 
-    setQ(text);
     await sendMessage(text);
   }
 
-  /* -------------------------------------------------------
+  /* =========================================================
      Keyboard send
      Cmd/Ctrl + Enter
-     ------------------------------------------------------- */
+     ========================================================= */
 
   function handleTextareaKeyDown(
     event: KeyboardEvent<HTMLTextAreaElement>
@@ -146,22 +318,86 @@ export default function FloatingAI() {
     }
   }
 
+  /* =========================================================
+     Reset conversation
+     ========================================================= */
+
   function resetConversation() {
     if (busy) return;
 
     setQ("");
-    setReply("");
+    setMessages([]);
+    setSuggestions([]);
+    setIntent("unknown");
+    setAction("none");
 
     window.setTimeout(() => {
       textareaRef.current?.focus();
     }, 50);
   }
 
+  /* =========================================================
+     Structured action
+     ========================================================= */
+
+  function handleAction() {
+    switch (action) {
+      case "view_products":
+        setOpen(false);
+        router.push("/products");
+        break;
+
+      case "view_technology":
+        setOpen(false);
+        router.push("/technology");
+        break;
+
+      case "view_solutions":
+        setOpen(false);
+        router.push("/solutions");
+        break;
+
+      case "consult_project":
+        setOpen(false);
+        router.push("/inquiry");
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  function actionLabel() {
+    switch (action) {
+      case "view_products":
+        return "查看产品中心";
+
+      case "view_technology":
+        return "了解技术平台";
+
+      case "view_solutions":
+        return "查看行业方案";
+
+      case "consult_project":
+        return "进入项目咨询";
+
+      default:
+        return "";
+    }
+  }
+
+  const hasConversation =
+    messages.length > 0;
+
+  /* =========================================================
+     Render
+     ========================================================= */
+
   return (
     <>
-      {/* ===================================================
+      {/* =====================================================
           Floating AI Orb
-          =================================================== */}
+          ===================================================== */}
 
       <button
         type="button"
@@ -173,8 +409,13 @@ export default function FloatingAI() {
           open ? "is-hidden" : ""
         }`}
       >
-        <span className="xy-ai-orb-icon" aria-hidden="true">
-          <span className="xy-ai-orb-star">✦</span>
+        <span
+          className="xy-ai-orb-icon"
+          aria-hidden="true"
+        >
+          <span className="xy-ai-orb-star">
+            ✦
+          </span>
         </span>
 
         <span className="xy-ai-orb-copy">
@@ -193,9 +434,9 @@ export default function FloatingAI() {
         />
       </button>
 
-      {/* ===================================================
+      {/* =====================================================
           Backdrop
-          =================================================== */}
+          ===================================================== */}
 
       <div
         className={`xy-ai-backdrop ${
@@ -203,18 +444,20 @@ export default function FloatingAI() {
         }`}
         aria-hidden={!open}
         onMouseDown={(event) => {
-          if (event.target === event.currentTarget) {
+          if (
+            event.target ===
+            event.currentTarget
+          ) {
             setOpen(false);
           }
         }}
       >
-        {/* =================================================
+        {/* ===================================================
             AI Glass Console
-            ================================================= */}
+            =================================================== */}
 
         <section
           id="xingyueyang-ai-dialog"
-          ref={modalRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="xingyueyang-ai-title"
@@ -237,9 +480,9 @@ export default function FloatingAI() {
             aria-hidden="true"
           />
 
-          {/* ===============================================
+          {/* =================================================
               Header
-              =============================================== */}
+              ================================================= */}
 
           <header className="xy-ai-head">
             <div className="xy-ai-brand">
@@ -265,137 +508,232 @@ export default function FloatingAI() {
             </div>
 
             <button
-              ref={closeRef}
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={() =>
+                setOpen(false)
+              }
               className="xy-ai-close xy-interactive"
               aria-label="关闭智能顾问"
             >
-              <span aria-hidden="true">×</span>
+              <span aria-hidden="true">
+                ×
+              </span>
             </button>
           </header>
 
-          {/* ===============================================
-              Intro
-              =============================================== */}
+          {/* =================================================
+              Conversation / Intro
+              ================================================= */}
 
-          {!reply && !busy && (
-            <div className="xy-ai-intro">
-              <div className="xy-ai-intro-label">
-                INDUSTRIAL INTELLIGENCE
-              </div>
+          <div
+            ref={conversationRef}
+            className="xy-ai-conversation"
+            aria-live="polite"
+          >
+            {!hasConversation &&
+              !busy && (
+                <>
+                  <div className="xy-ai-intro">
+                    <div className="xy-ai-intro-label">
+                      INDUSTRIAL INTELLIGENCE
+                    </div>
 
-              <h3>
-                今天想了解什么？
-              </h3>
+                    <h3>
+                      今天想了解什么？
+                    </h3>
 
-              <p>
-                可以询问产品选型、工业在线监测、
-                行业应用与系统连接。
-              </p>
-            </div>
-          )}
+                    <p>
+                      可以询问产品选型、工业在线监测、
+                      行业应用与系统连接。
+                    </p>
+                  </div>
 
-          {/* ===============================================
-              Suggestions
-              =============================================== */}
+                  <div className="xy-ai-suggestions">
+                    {initialSuggestions.map(
+                      (item) => (
+                        <button
+                          key={item.label}
+                          type="button"
+                          disabled={busy}
+                          onClick={() =>
+                            void askSuggestion(
+                              item.text
+                            )
+                          }
+                          className="xy-ai-suggestion xy-interactive"
+                        >
+                          <span>
+                            {item.label}
+                          </span>
 
-          {!reply && !busy && (
-            <div className="xy-ai-suggestions">
-              {suggestions.map((item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  disabled={busy}
-                  onClick={() =>
-                    void askSuggestion(item.text)
-                  }
-                  className="xy-ai-suggestion xy-interactive"
+                          <span
+                            className="xy-ai-suggestion-arrow"
+                            aria-hidden="true"
+                          >
+                            ↗
+                          </span>
+                        </button>
+                      )
+                    )}
+                  </div>
+                </>
+              )}
+
+            {/* ===============================================
+                Messages
+                =============================================== */}
+
+            {messages.map(
+              (message, index) => (
+                <div
+                  key={`${message.role}-${index}`}
+                  className={`xy-ai-message ${
+                    message.role === "user"
+                      ? "is-user"
+                      : "is-assistant"
+                  }`}
                 >
-                  <span>
-                    {item.label}
-                  </span>
+                  <div className="xy-ai-message-meta">
+                    {message.role === "user"
+                      ? "YOU"
+                      : "星玥阳 AI"}
+                  </div>
 
-                  <span
-                    className="xy-ai-suggestion-arrow"
+                  <div className="xy-ai-message-content">
+                    {message.content}
+                  </div>
+                </div>
+              )
+            )}
+
+            {/* ===============================================
+                Thinking
+                =============================================== */}
+
+            {busy && (
+              <div
+                className="xy-ai-thinking"
+                role="status"
+              >
+                <div className="xy-ai-thinking-icon">
+                  ✦
+                </div>
+
+                <div>
+                  <div className="xy-ai-thinking-title">
+                    正在分析产品与应用资料
+                  </div>
+
+                  <div
+                    className="xy-ai-thinking-dots"
                     aria-hidden="true"
                   >
-                    ↗
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* ===============================================
-              Thinking
-              =============================================== */}
-
-          {busy && (
-            <div
-              className="xy-ai-thinking"
-              role="status"
-              aria-live="polite"
-            >
-              <div className="xy-ai-thinking-icon">
-                ✦
-              </div>
-
-              <div>
-                <div className="xy-ai-thinking-title">
-                  正在分析产品与应用资料
+                    <span />
+                    <span />
+                    <span />
+                  </div>
                 </div>
+              </div>
+            )}
 
-                <div
-                  className="xy-ai-thinking-dots"
+            {/* ===============================================
+                Dynamic suggestions
+                =============================================== */}
+
+            {!busy &&
+              hasConversation &&
+              suggestions.length > 0 && (
+                <div className="xy-ai-followups">
+                  <div className="xy-ai-followups-label">
+                    继续了解
+                  </div>
+
+                  <div className="xy-ai-suggestions">
+                    {suggestions.map(
+                      (suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() =>
+                            void askSuggestion(
+                              suggestion
+                            )
+                          }
+                          className="xy-ai-suggestion xy-interactive"
+                        >
+                          <span>
+                            {suggestion}
+                          </span>
+
+                          <span
+                            className="xy-ai-suggestion-arrow"
+                            aria-hidden="true"
+                          >
+                            ↗
+                          </span>
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+
+            {/* ===============================================
+                Structured action
+                =============================================== */}
+
+            {!busy &&
+              hasConversation &&
+              action !== "none" && (
+                <div className="xy-ai-action">
+                  <button
+                    type="button"
+                    onClick={handleAction}
+                    className="xy-ai-action-button xy-interactive"
+                  >
+                    <span>
+                      {actionLabel()}
+                    </span>
+
+                    <span aria-hidden="true">
+                      →
+                    </span>
+                  </button>
+                </div>
+              )}
+          </div>
+
+          {/* =================================================
+              Conversation toolbar
+              ================================================= */}
+
+          {hasConversation && (
+            <div className="xy-ai-conversation-toolbar">
+              <div className="xy-ai-context">
+                <span
+                  className="xy-ai-context-dot"
                   aria-hidden="true"
-                >
-                  <span />
-                  <span />
-                  <span />
-                </div>
+                />
+
+                <span>
+                  CONTEXT ACTIVE
+                </span>
               </div>
+
+              <button
+                type="button"
+                onClick={resetConversation}
+                disabled={busy}
+                className="xy-ai-reset"
+              >
+                新对话
+              </button>
             </div>
           )}
 
-          {/* ===============================================
-              Reply
-              =============================================== */}
-
-          {reply && !busy && (
-            <div
-              className="xy-ai-response"
-              aria-live="polite"
-            >
-              <div className="xy-ai-response-head">
-                <div className="xy-ai-response-brand">
-                  <span aria-hidden="true">
-                    ✦
-                  </span>
-
-                  <span>
-                    星玥阳 AI
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={resetConversation}
-                  className="xy-ai-reset"
-                >
-                  新问题
-                </button>
-              </div>
-
-              <div className="xy-ai-reply">
-                {reply}
-              </div>
-            </div>
-          )}
-
-          {/* ===============================================
+          {/* =================================================
               Input
-              =============================================== */}
+              ================================================= */}
 
           <form
             onSubmit={ask}
@@ -408,11 +746,17 @@ export default function FloatingAI() {
                 onChange={(event) =>
                   setQ(event.target.value)
                 }
-                onKeyDown={handleTextareaKeyDown}
+                onKeyDown={
+                  handleTextareaKeyDown
+                }
                 disabled={busy}
                 rows={3}
                 maxLength={1600}
-                placeholder="询问产品、技术或行业解决方案…"
+                placeholder={
+                  hasConversation
+                    ? "继续询问…"
+                    : "询问产品、技术或行业解决方案…"
+                }
                 aria-label="向星玥阳 AI 提问"
               />
 
@@ -423,7 +767,9 @@ export default function FloatingAI() {
 
                 <button
                   type="submit"
-                  disabled={!q.trim() || busy}
+                  disabled={
+                    !q.trim() || busy
+                  }
                   className="xy-ai-send xy-interactive"
                   aria-label="发送问题"
                 >
@@ -442,9 +788,9 @@ export default function FloatingAI() {
             </div>
           </form>
 
-          {/* ===============================================
+          {/* =================================================
               Footer
-              =============================================== */}
+              ================================================= */}
 
           <footer className="xy-ai-footer">
             <span>
