@@ -21,15 +21,15 @@ export default function XingyueyangFooter() {
         <div className="grid gap-12 lg:grid-cols-[1.4fr_.8fr_.8fr]">
           <div>
             <Link href="/" className="inline-flex items-center gap-3">
-              <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-                <Image
-                  src="/xingyueyang-logo.png"
-                  alt="江苏星玥阳科技有限公司"
-                  width={88}
-                  height={88}
-                  className="absolute left-1/2 top-0 h-[88px] w-auto max-w-none -translate-x-1/2"
-                />
-              </div>
+              <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-white/70 bg-white/50">
+             <Image
+  src="/xingyueyang-icon.png"
+  alt=""
+  width={36}
+  height={36}
+  className="h-9 w-9 object-contain"
+/>
+</div>
 
               <div>
                 <div className="text-sm font-semibold">

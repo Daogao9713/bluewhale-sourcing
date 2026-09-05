@@ -45,7 +45,7 @@ export default function WorkspaceShell(){
  useEffect(()=>{if(!key)return;const timer=window.setTimeout(()=>void load(),0);return()=>window.clearTimeout(timer)},[key,load]);
  function unlock(e:FormEvent){e.preventDefault();const x=draft.trim();if(!x)return;sessionStorage.setItem("bluewhale_admin_key",x);setKey(x)}
  function switchLang(x:Lang){setLang(x);localStorage.setItem("bluewhale_workspace_lang",x)}
- if(!key)return <main className="xy-workspace relative grid min-h-screen place-items-center overflow-hidden p-5"><div className="pointer-events-none absolute left-[10%] top-[8%] h-72 w-72 rounded-full bg-blue-300/10 blur-[100px]"/><div className="pointer-events-none absolute bottom-[5%] right-[8%] h-72 w-72 rounded-full bg-amber-300/10 blur-[100px]"/><form onSubmit={unlock} className="xy-workspace-panel relative w-full max-w-[440px] rounded-[32px] p-7 sm:p-9"><div className="flex items-center gap-3"><div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-white/70 bg-white/50"><Image fill src="/xingyueyang-logo.png" alt="" className="absolute left-1/2 top-0 h-[84px] w-auto max-w-none -translate-x-1/2"/></div><div><div className="text-sm font-semibold">江苏星玥阳科技有限公司</div><div className="mt-0.5 text-[9px] font-bold tracking-[.18em] text-slate-400">UNIVERSE TECH</div></div></div><div className="mt-10 text-[9px] font-bold tracking-[.2em] text-amber-600">ENTERPRISE WORKSPACE</div><h1 className="mt-2 text-3xl font-semibold tracking-[-.04em]">Industrial OS</h1><p className="mt-3 text-sm leading-6 text-slate-500">企业运营、内容管理与工业数据工作台</p><input className="xy-cms-field mt-8 px-4 py-3.5" type="password" value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Workspace admin key"/><button className="xy-cms-primary mt-3 w-full rounded-2xl py-3.5 text-sm font-semibold">进入工作台</button><div className="mt-6 flex items-center justify-between border-t border-slate-200/50 pt-5 text-[10px] text-slate-400"><span>XINGYUEYANG INDUSTRIAL OS</span><span>X0.44</span></div></form></main>;
+ if(!key)return <main className="xy-workspace relative grid min-h-screen place-items-center overflow-hidden p-5"><div className="pointer-events-none absolute left-[10%] top-[8%] h-72 w-72 rounded-full bg-blue-300/10 blur-[100px]"/><div className="pointer-events-none absolute bottom-[5%] right-[8%] h-72 w-72 rounded-full bg-amber-300/10 blur-[100px]"/><form onSubmit={unlock} className="xy-workspace-panel relative w-full max-w-[440px] rounded-[32px] p-7 sm:p-9"><div><div className="text-sm font-semibold">江苏星玥阳科技有限公司</div><div className="mt-0.5 text-[9px] font-bold tracking-[.18em] text-slate-400">UNIVERSE TECH</div></div><div className="mt-10 text-[9px] font-bold tracking-[.2em] text-amber-600">ENTERPRISE WORKSPACE</div><h1 className="mt-2 text-3xl font-semibold tracking-[-.04em]">Industrial OS</h1><p className="mt-3 text-sm leading-6 text-slate-500">企业运营、内容管理与工业数据工作台</p><input className="xy-cms-field mt-8 px-4 py-3.5" type="password" value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Workspace admin key"/><button className="xy-cms-primary mt-3 w-full rounded-2xl py-3.5 text-sm font-semibold">进入工作台</button><div className="mt-6 flex items-center justify-between border-t border-slate-200/50 pt-5 text-[10px] text-slate-400"><span>XINGYUEYANG INDUSTRIAL OS</span><span>X0.44</span></div></form></main>;
  const nav:[Tab|string,string,string][]=[["dashboard",t.dashboard,"DB"],["news",t.news,"NW"],["productcms",lang==="zh"?"设备管理":"Product CMS","PD"],["casecms",lang==="zh"?"工程案例":"Case CMS","CS"],["projects",t.projects,"PR"],["suppliers",t.suppliers,"SP"],["rfq",t.rfq,"RQ"],["inquiries",t.inquiries,"IN"],["documents",t.documents,"DC"],["integrations",t.integrations,"IX"],["ai",t.ai,"AI"]];
   
   return <div className="xy-workspace min-h-screen text-slate-950">
@@ -68,11 +68,13 @@ export default function WorkspaceShell(){
    <div className="flex h-full flex-col"><div className="border-b border-white/10 p-5">
   <div className="flex items-center gap-3">
     <div className="relative h-10 w-10 overflow-hidden rounded-xl border border-white/10 bg-white/5">
-      <Image fill 
-        src="/xingyueyang-logo.png"
-        alt=""
-        className="absolute left-1/2 top-0 h-[74px] w-auto max-w-none -translate-x-1/2"
-      />
+      <Image
+       fill
+  src="/xingyueyang-logo.png"
+  alt=""
+  sizes="40px"
+  className="object-contain p-1"
+/>
     </div>
 
     <div>

@@ -52,7 +52,7 @@ export async function publicProducts(featured = false) {
 export async function publicProduct(slug: string) {
   const { data, error } = await db()
     .from("xy_products")
-    .select("*")
+    .select(PRODUCT_FIELDS)
     .eq("slug", slug)
     .eq("status", "active")
     .maybeSingle();

@@ -204,7 +204,7 @@ if (!rateLimit.allowed) {
 
 
     // 1. 先保存到 Supabase
-    const { data, error: insertError } = await supabaseAdmin
+    const { error: insertError } = await supabaseAdmin
       .from("inquiries")
       .insert({
         company_name: companyName,
@@ -218,18 +218,18 @@ if (!rateLimit.allowed) {
         quantity,
         needs_ems: needsEms,
         message,
-      })
-      .select()
-      .single();
+      });
 
     if (insertError) {
-      console.error("Supabase insert error:", insertError);
+      console.error(
+        "Supabase insert error:",
+        insertError
+      );
 
       return NextResponse.json(
         {
           success: false,
           error: "Failed to save inquiry",
-          detail: insertError.message,
         },
         { status: 500 }
       );
@@ -272,7 +272,6 @@ if (!rateLimit.allowed) {
     return NextResponse.json(
       {
         success: true,
-        inquiry: data,
       },
       { status: 200 }
     );
