@@ -258,14 +258,14 @@ export default function InquiryForm() {
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">{t.language}</label>
           <select
-            name="preferredLanguage"
-            className={inputClass}
-            defaultValue={lang === "zh" ? "中文" : lang === "ja" ? "日本語" : "English"}
+               name="preferredLanguage"
+               className={inputClass}
+                defaultValue={lang}
           >
-            <option value="中文">中文</option>
-            <option value="日本語">日本語</option>
-            <option value="English">English</option>
-          </select>
+                 <option value="zh">中文</option>
+                 <option value="ja">日本語</option>
+                 <option value="en">English</option>
+              </select>
         </div>
 
         <div>
