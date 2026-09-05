@@ -1,10 +1,10 @@
 import CompanySiteLayout from "@/components/site/CompanySiteLayout";
-import { BusinessContent } from "@/components/site/StaticPages";
+import { TechnologyContent } from "@/components/site/StaticPages";
 
 export default function Page() {
   return (
     <CompanySiteLayout>
-      <BusinessContent />
+      <TechnologyContent />
     </CompanySiteLayout>
   );
 }
