@@ -1,10 +1,5 @@
-import CompanySiteLayout from "@/components/site/CompanySiteLayout";
-import { SourcingContent } from "@/components/site/StaticPages";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return (
-    <CompanySiteLayout>
-      <SourcingContent />
-    </CompanySiteLayout>
-  );
+  redirect("/inquiry");
 }
