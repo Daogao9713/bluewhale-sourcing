@@ -108,9 +108,7 @@ function validateInquiry(
       body.quantity,
       80
     ),
-    needsEms: normalizeBoolean(
-      body.needsEms
-    ),
+
     message: optionalString(
       body.message,
       5000
@@ -168,7 +166,6 @@ export async function POST(req: Request) {
   productName,
   modelNumber,
   quantity,
-  needsEms,
   message,
 } = validateInquiry(body);
 
@@ -216,13 +213,13 @@ if (!rateLimit.allowed) {
         product_name: productName,
         model_number: modelNumber,
         quantity,
-        needs_ems: needsEms,
+        needs_ems: false,
         message,
       });
 
     if (insertError) {
       console.error(
-        "Supabase insert error:",
+        "[inquiry:database]",
         insertError
       );
 
@@ -238,34 +235,39 @@ if (!rateLimit.allowed) {
     // 2. 邮件通知：即使邮件失败，也不影响表单提交成功
     try {
       const emailResult = await resend.emails.send({
-        from: "Blue Whale Sourcing <onboarding@resend.dev>",
-        to: process.env.NOTIFICATION_EMAIL!,
-        subject: "新的海外采购询价",
-        html: `
-            <h2>收到新的海外采购询价</h2>
+        from:
+  "UNIVERSE TECH 星玥阳 <onboarding@resend.dev>",
 
-            <p><strong>公司：</strong>${emailValue(companyName)}</p>
-            <p><strong>联系人：</strong>${emailValue(contactName)}</p>
-            <p><strong>邮箱：</strong>${emailValue(email)}</p>
-            <p><strong>电话：</strong>${emailValue(phone)}</p>
-            <p><strong>国家：</strong>${emailValue(country)}</p>
-            <p><strong>希望语言：</strong>${emailValue(preferredLanguage)}</p>
+to:
+  process.env.NOTIFICATION_EMAIL!,
 
-           <hr />
+subject:
+  "星玥阳官网 · 新的项目咨询",
 
-  <p><strong>产品名称：</strong>${emailValue(productName)}</p>
-  <p><strong>产品型号：</strong>${emailValue(modelNumber)}</p>
-  <p><strong>采购数量：</strong>${emailValue(quantity)}</p>
-  <p><strong>是否需要 EMS：</strong>${needsEms ? "是" : "否"}</p>
+html: `
+  <h2>星玥阳官网收到新的项目咨询</h2>
 
-  <p><strong>详细需求：</strong></p>
+  <p><strong>公司：</strong>${emailValue(companyName)}</p>
+  <p><strong>联系人：</strong>${emailValue(contactName)}</p>
+  <p><strong>邮箱：</strong>${emailValue(email)}</p>
+  <p><strong>电话：</strong>${emailValue(phone)}</p>
+  <p><strong>地区：</strong>${emailValue(country)}</p>
+  <p><strong>沟通语言：</strong>${emailValue(preferredLanguage)}</p>
+
+  <hr />
+
+  <p><strong>产品 / 项目：</strong>${emailValue(productName)}</p>
+  <p><strong>型号 / 系统类型：</strong>${emailValue(modelNumber)}</p>
+  <p><strong>项目规模 / 数量：</strong>${emailValue(quantity)}</p>
+
+  <p><strong>项目需求：</strong></p>
   <p>${emailMultilineValue(message)}</p>
 `,
       });
 
       console.log("Resend email result:", emailResult);
     } catch (emailError) {
-      console.error("Resend email error:", emailError);
+      console.error("[inquiry:email]", emailError);
     }
 
     // 3. 只要 Supabase 保存成功，就返回成功
@@ -291,7 +293,7 @@ if (!rateLimit.allowed) {
       );
     }
 
-    console.error("Inquiry API error:", error);
+    console.error("[inquiry:api]", error);
 
     return NextResponse.json(
       {

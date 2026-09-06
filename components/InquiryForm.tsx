@@ -100,56 +100,58 @@ export default function InquiryForm() {
 
   const t = {
     zh: {
-      company: "公司名称",
-      name: "联系人姓名",
-      email: "邮箱 *",
-      phone: "电话 / WhatsApp / WeChat / LINE",
-      country: "所在国家 / 地区",
-      language: "希望沟通语言",
-      product: "产品 / 项目名称",
-      model: "型号 / 规格",
-      quantity: "采购数量 / 项目规模",
-      ems: "需要 EMS / 国际快递",
-      detail: "详细需求",
-      detailPh: "请填写产品要求、交付国家、付款方式、希望交期、认证、预算等信息。",
-      submit: "提交业务需求",
-      submitting: "提交中…",
-      fail: "提交失败，请稍后再试。",
+       company: "公司名称",
+       name: "联系人姓名",
+       email: "邮箱 *",
+       phone: "联系电话 / 微信",
+       country: "所在地区",
+       language: "希望沟通语言",
+       product: "产品 / 项目名称",
+       model: "产品型号 / 系统类型",
+       quantity: "项目规模 / 数量",
+       detail: "项目需求",
+       detailPh:
+    "请描述应用行业、检测或监测对象、现场工况、技术指标、系统集成需求及其他项目要求。",
+       submit: "提交项目咨询",
+       submitting: "提交中…",
+       fail: "提交失败，请稍后再试。",
     },
     ja: {
       company: "会社名",
       name: "ご担当者名",
       email: "メールアドレス *",
-      phone: "電話 / WhatsApp / WeChat / LINE",
+      phone: "電話 / WeChat",
       country: "国・地域",
       language: "希望言語",
       product: "製品 / プロジェクト名",
-      model: "型番 / 仕様",
-      quantity: "数量 / プロジェクト規模",
-      ems: "EMS / 国際配送が必要",
-      detail: "詳細要件",
-      detailPh: "製品要件、納品国、支払条件、希望納期、認証、予算などをご記入ください。",
-      submit: "相談内容を送信",
-      submitting: "送信中…",
-      fail: "送信に失敗しました。しばらくしてから再度お試しください。",
+     model: "製品型番 / システム種別",
+     quantity: "プロジェクト規模 / 数量",
+      detail: "プロジェクト要件",
+     detailPh:
+    "対象業界、測定・監視対象、現場条件、技術要件、システム連携要件などをご記入ください。",
+       submit: "技術相談を送信",
+       submitting: "送信中…",
+      fail:
+    "送信に失敗しました。しばらくしてから再度お試しください。",
     },
     en: {
-      company: "Company name",
-      name: "Contact person",
-      email: "Email *",
-      phone: "Phone / WhatsApp / WeChat / LINE",
-      country: "Country / region",
-      language: "Preferred language",
-      product: "Product / project name",
-      model: "Model / specification",
-      quantity: "Quantity / project scale",
-      ems: "Need EMS / international express",
-      detail: "Detailed requirements",
-      detailPh: "Please include product requirements, destination, payment terms, desired delivery, certification, budget and other relevant information.",
-      submit: "Submit business request",
-      submitting: "Submitting…",
-      fail: "Submission failed. Please try again later.",
-    },
+  company: "Company name",
+  name: "Contact person",
+  email: "Email *",
+  phone: "Phone / WeChat",
+  country: "Country / region",
+  language: "Preferred language",
+  product: "Product / project name",
+  model: "Product model / system type",
+  quantity: "Project scale / quantity",
+  detail: "Project requirements",
+  detailPh:
+    "Please describe the industry, measurement or monitoring target, site conditions, technical requirements, system integration needs and other project requirements.",
+  submit: "Submit technical inquiry",
+  submitting: "Submitting…",
+  fail:
+    "Submission failed. Please try again later.",
+},
   }[lang];
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -161,18 +163,27 @@ export default function InquiryForm() {
     const formData = new FormData(form);
 
     const data = {
-      companyName: formData.get("companyName"),
-      contactName: formData.get("contactName"),
-      email: formData.get("email"),
-      phone: formData.get("phone"),
-      country: formData.get("country"),
-      preferredLanguage: formData.get("preferredLanguage"),
-      productName: formData.get("productName"),
-      modelNumber: formData.get("modelNumber"),
-      quantity: formData.get("quantity"),
-      needsEms: formData.get("needsEms") === "on",
-      message: formData.get("message"),
-    };
+  companyName:
+    formData.get("companyName"),
+  contactName:
+    formData.get("contactName"),
+  email:
+    formData.get("email"),
+  phone:
+    formData.get("phone"),
+  country:
+    formData.get("country"),
+  preferredLanguage:
+    formData.get("preferredLanguage"),
+  productName:
+    formData.get("productName"),
+  modelNumber:
+    formData.get("modelNumber"),
+  quantity:
+    formData.get("quantity"),
+  message:
+    formData.get("message"),
+};
 
     try {
       const res = await fetch("/api/inquiry", {
@@ -297,13 +308,6 @@ export default function InquiryForm() {
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">{t.quantity}</label>
           <input name="quantity" className={inputClass} placeholder={t.quantity} />
-        </div>
-
-        <div className="flex items-end">
-          <label className="xy-glass-input flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-sm text-slate-700">
-            <input type="checkbox" name="needsEms" />
-            {t.ems}
-          </label>
         </div>
       </div>
 
