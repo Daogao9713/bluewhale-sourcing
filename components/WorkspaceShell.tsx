@@ -5,8 +5,8 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 
 type Lang="zh"|"en"; type Tab="dashboard"|"projects"|"suppliers"|"rfq"|"inquiries"|"documents"|"integrations"|"ai"; type WorkspaceRow={id?:string;name?:string;company_name?:string;title?:string;product_name?:string;contact_name?:string;status?:string;category?:string;country?:string;quantity?:string|number;email?:string;created_at?:string}; type WorkspaceData={projects:WorkspaceRow[];suppliers:WorkspaceRow[];rfqs:WorkspaceRow[];inquiries:WorkspaceRow[];[key:string]:WorkspaceRow[]}; type ApiPayload=Record<string,unknown>&Partial<WorkspaceData>; type DocumentForm={document_type:string;currency:string;items:Array<{description:string;quantity:number;unit_price:number}>;[key:string]:unknown}; type DocumentRecord={id:string;document_no?:string;document_type?:string;title?:string;customer_name?:string;currency?:string;total?:number}; type IntegrationRecord={id?:string;integration_type?:string;name?:string;status?:string}; type IntegrationPayload=ApiPayload&{mes?:{message?:string};connections?:IntegrationRecord[]}; type ChatMessage={role:"user"|"assistant";content:string};
 const copy={
- zh:{dashboard:"仪表盘",projects:"项目",suppliers:"供应商",rfq:"询价 RFQ",inquiries:"客户询盘",documents:"商务文档",integrations:"系统集成",ai:"AI Copilot",news:"公司新闻",refresh:"刷新",online:"系统在线",public:"打开官网",lock:"锁定后台",overview:"星玥阳运营总览",hero:"连接客户、产品、订单、生产、质量、文档与智能分析的一体化制造业工作台。",recent:"近期业务活动",empty:"暂无记录",newDoc:"新建文档",quotation:"报价单",contract:"合同",po:"采购订单",report:"报告",mes:"MES / ERP 集成接口",reserved:"标准连接器已预留，企业实施团队可接入实际 MES / ERP / WMS。",ask:"询问项目、供应商、RFQ、文档或数据库状态…"},
- en:{dashboard:"Dashboard",projects:"Projects",suppliers:"Suppliers",rfq:"RFQ",inquiries:"Inquiries",documents:"Documents",integrations:"Integrations",ai:"AI Copilot",news:"Company News",refresh:"Refresh",online:"Systems online",public:"Open website",lock:"Lock workspace",overview:"Xingyueyang Operations Overview",hero:"One workspace from inquiries and sourcing to documents and system integrations.",recent:"Recent business activity",empty:"No records yet.",newDoc:"New document",quotation:"Quotation",contract:"Contract",po:"Purchase Order",report:"Report",mes:"MES / ERP Integration",reserved:"Standard adapters are reserved for enterprise MES / ERP / WMS implementation.",ask:"Ask about projects, suppliers, RFQs, documents or database status…"}
+ zh:{dashboard:"仪表盘",projects:"项目",suppliers:"供应商",rfq:"询价 RFQ",inquiries:"客户询盘",documents:"商务文档",integrations:"系统集成",ai:"AI Copilot",news:"公司新闻",refresh:"刷新",online:"系统在线",public:"打开官网",logout:"退出登录",overview:"星玥阳运营总览",hero:"连接客户、产品、订单、生产、质量、文档与智能分析的一体化制造业工作台。",recent:"近期业务活动",empty:"暂无记录",newDoc:"新建文档",quotation:"报价单",contract:"合同",po:"采购订单",report:"报告",mes:"MES / ERP 集成接口",reserved:"标准连接器已预留，企业实施团队可接入实际 MES / ERP / WMS。",ask:"询问项目、供应商、RFQ、文档或数据库状态…"},
+ en:{dashboard:"Dashboard",projects:"Projects",suppliers:"Suppliers",rfq:"RFQ",inquiries:"Inquiries",documents:"Documents",integrations:"Integrations",ai:"AI Copilot",news:"Company News",refresh:"Refresh",online:"Systems online",public:"Open website",logout:"Sign out",overview:"Xingyueyang Operations Overview",hero:"One workspace from inquiries and sourcing to documents and system integrations.",recent:"Recent business activity",empty:"No records yet.",newDoc:"New document",quotation:"Quotation",contract:"Contract",po:"Purchase Order",report:"Report",mes:"MES / ERP Integration",reserved:"Standard adapters are reserved for enterprise MES / ERP / WMS implementation.",ask:"Ask about projects, suppliers, RFQs, documents or database status…"}
 };
 
 export default function WorkspaceShell(){
@@ -80,6 +80,7 @@ export default function WorkspaceShell(){
  const request=useCallback(async function request(path:string,init:RequestInit={}):Promise<ApiPayload>{
   const h=new Headers(init.headers); if(init.body)h.set("Content-Type","application/json");
   const r=await fetch(path,{...init,headers:h,credentials:"same-origin",cache:"no-store"}); const p=await r.json().catch(()=>({}));
+  if(r.status===401){setKey("");throw new Error("Workspace session expired.");}
   if(!r.ok)throw new Error(p.error||`Request failed (${r.status})`); return p;
   }, []);
  const load=useCallback(async function load(){setLoading(true);setError("");try{const p=await request("/api/workspace");setData({projects:p.projects||[],suppliers:p.suppliers||[],rfqs:p.rfqs||[],inquiries:p.inquiries||[]})}catch(e:unknown){setError(e instanceof Error?e.message:"Request failed")}finally{setLoading(false)}}, [request]);
@@ -116,6 +117,21 @@ export default function WorkspaceShell(){
   }
  }
  function switchLang(x:Lang){setLang(x);localStorage.setItem("bluewhale_workspace_lang",x)}
+ async function logout(){
+  setError("");
+
+  try{
+   await fetch("/api/workspace/auth",{method:"DELETE",credentials:"same-origin",cache:"no-store"});
+  }catch{
+   /* Local UI state is cleared even if the network request fails. */
+  }finally{
+   /* Clean credential residue left by pre-hardening versions. */
+   sessionStorage.removeItem("bluewhale_admin_key");
+   setKey("");
+   setDraft("");
+   setMobile(false);
+  }
+ }
  if(!key)return <main className="xy-workspace relative grid min-h-screen place-items-center overflow-hidden p-5"><div className="pointer-events-none absolute left-[10%] top-[8%] h-72 w-72 rounded-full bg-blue-300/10 blur-[100px]"/><div className="pointer-events-none absolute bottom-[5%] right-[8%] h-72 w-72 rounded-full bg-amber-300/10 blur-[100px]"/><form onSubmit={unlock} className="xy-workspace-panel relative w-full max-w-[440px] rounded-[32px] p-7 sm:p-9"><div><div className="text-sm font-semibold">江苏星玥阳科技有限公司</div><div className="mt-0.5 text-[9px] font-bold tracking-[.18em] text-slate-400">UNIVERSE TECH</div></div><div className="mt-10 text-[9px] font-bold tracking-[.2em] text-amber-600">ENTERPRISE WORKSPACE</div><h1 className="mt-2 text-3xl font-semibold tracking-[-.04em]">Industrial OS</h1><p className="mt-3 text-sm leading-6 text-slate-500">企业运营、内容管理与工业数据工作台</p><input className="xy-cms-field mt-8 px-4 py-3.5" type="password" value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Workspace admin key"/><button disabled={loading} className="xy-cms-primary mt-3 w-full rounded-2xl py-3.5 text-sm font-semibold">{loading?"验证中…":"进入工作台"}</button>{error&&<p role="alert" className="mt-3 text-sm text-red-600">{error}</p>}<div className="mt-6 flex items-center justify-between border-t border-slate-200/50 pt-5 text-[10px] text-slate-400"><span>XINGYUEYANG INDUSTRIAL OS</span><span>X0.44</span></div></form></main>;
  const nav:[Tab|string,string,string][]=[["dashboard",t.dashboard,"DB"],["news",t.news,"NW"],["productcms",lang==="zh"?"设备管理":"Product CMS","PD"],["casecms",lang==="zh"?"工程案例":"Case CMS","CS"],["projects",t.projects,"PR"],["suppliers",t.suppliers,"SP"],["rfq",t.rfq,"RQ"],["inquiries",t.inquiries,"IN"],["documents",t.documents,"DC"],["integrations",t.integrations,"IX"],["ai",t.ai,"AI"]];
   
@@ -171,7 +187,7 @@ export default function WorkspaceShell(){
   </div>
 </div>
   <nav className="flex-1 space-y-1 overflow-y-auto p-3">{nav.map(([id,label,short])=>id==="news"?<Link key={id} href="/workspace/news" onClick={() => setMobile(false)} className="xy-workspace-nav flex gap-3 rounded-xl px-3 py-3 text-sm text-slate-400"><b className="w-7 text-[10px]">{short}</b>{label}</Link>:id==="productcms"?<Link key={id} href="/workspace/products" onClick={() => setMobile(false)} className="xy-workspace-nav flex gap-3 rounded-xl px-3 py-3 text-sm text-slate-400"><b className="w-7 text-[10px]">{short}</b>{label}</Link>:id==="casecms"?<Link key={id} href="/workspace/cases" onClick={() => setMobile(false)} className="xy-workspace-nav flex gap-3 rounded-xl px-3 py-3 text-sm text-slate-400"><b className="w-7 text-[10px]">{short}</b>{label}</Link>:<button key={id} onClick={()=>{setTab(id as Tab);setMobile(false)}} className={`xy-workspace-nav flex w-full gap-3 rounded-xl px-3 py-3 text-left text-sm ${tab===id?"xy-workspace-nav-active":"text-slate-400"}`}><b className="w-7 text-[10px]">{short}</b>{label}</button>)}</nav>
-  <div className="border-t border-white/10 p-3"><Link href="/" className="block px-3 py-2 text-xs text-slate-400">{t.public} ↗</Link><button onClick={()=>setKey("")} className="px-3 py-2 text-xs text-slate-500">{t.lock}</button></div></div>
+  <div className="border-t border-white/10 p-3"><Link href="/" className="block px-3 py-2 text-xs text-slate-400">{t.public} ↗</Link><button type="button" onClick={()=>void logout()} className="px-3 py-2 text-xs text-slate-500">{t.logout}</button></div></div>
   </aside>
     <div className="lg:pl-[260px]"><header className="sticky top-0 z-30 px-3 pt-3 lg:px-6 lg:pt-4"><div className="xy-workspace-topbar flex min-h-16 items-center justify-between rounded-2xl px-4 lg:px-5"><div className="flex min-w-0 items-center gap-3"><button onClick={()=>setMobile(!mobile)} className="xy-glass-button rounded-xl px-3 py-2 text-xs lg:hidden">MENU</button><div className="min-w-0"><div className="truncate text-[9px] font-semibold tracking-[.15em] text-slate-400 sm:text-[10px]">JIANGSU XINGYUEYANG TECHNOLOGY</div><div className="mt-0.5 truncate text-sm font-semibold text-slate-900">{nav.find(x=>x[0]===tab)?.[1]}</div></div></div><div className="flex shrink-0 gap-2"><button onClick={()=>switchLang(lang==="zh"?"en":"zh")} className="xy-glass-button rounded-full px-3 py-2 text-xs">{lang==="zh"?"EN":"中文"}</button><button onClick={load} className="xy-glass-button hidden rounded-full px-3 py-2 text-xs sm:block">{t.refresh}</button></div></div></header>
   <main className="p-3 pt-5 sm:p-4 sm:pt-6 lg:px-6 lg:pb-8 lg:pt-6">{error&&<div className="mb-5 rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm">{error}</div>}

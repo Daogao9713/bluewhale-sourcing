@@ -276,10 +276,21 @@ export default function NewsAdmin() {
     }
   }
 
-  function logout() {
+  async function logout() {
+  try {
+    await fetch(
+      "/api/workspace/auth",
+      {
+        method: "DELETE",
+        credentials: "same-origin",
+        cache: "no-store",
+      }
+    );
+  } finally {
     setKey("");
     setDraftKey("");
   }
+}
 
   /* =======================================================
      EDIT

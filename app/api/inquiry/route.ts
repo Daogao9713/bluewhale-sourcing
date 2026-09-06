@@ -65,11 +65,6 @@ function normalizeLanguage(
     : "";
 }
 
-function normalizeBoolean(
-  value: unknown
-) {
-  return value === true;
-}
 
 function validateInquiry(
   body: Record<string, unknown>
@@ -234,7 +229,7 @@ if (!rateLimit.allowed) {
 
     // 2. 邮件通知：即使邮件失败，也不影响表单提交成功
     try {
-      const emailResult = await resend.emails.send({
+      await resend.emails.send({
         from:
   "UNIVERSE TECH 星玥阳 <onboarding@resend.dev>",
 
@@ -264,8 +259,6 @@ html: `
   <p>${emailMultilineValue(message)}</p>
 `,
       });
-
-      console.log("Resend email result:", emailResult);
     } catch (emailError) {
       console.error("[inquiry:email]", emailError);
     }

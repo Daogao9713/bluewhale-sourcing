@@ -246,34 +246,38 @@ export async function POST(req: Request) {
        * Development diagnostics.
        * No API keys or secrets are exposed here.
        */
-      meta: {
-        provider: result.provider,
+      ...(process.env.NODE_ENV !== "production"
+        ? {
+            meta: {
+              provider: result.provider,
 
-        groundedProducts:
-          cmsProducts.length,
+              groundedProducts:
+                cmsProducts.length,
 
-        historyMessages:
-          history.length,
+              historyMessages:
+                history.length,
 
-        pathname,
+              pathname,
 
-        currentProduct:
-          currentProduct
-            ? {
-                slug:
-                  currentProduct.slug ??
-                  null,
+              currentProduct:
+                currentProduct
+                  ? {
+                      slug:
+                        currentProduct.slug ??
+                        null,
 
-                model:
-                  currentProduct.model ??
-                  null,
+                      model:
+                        currentProduct.model ??
+                        null,
 
-                name:
-                  currentProduct.name ??
-                  null,
-              }
-            : null,
-      },
+                      name:
+                        currentProduct.name ??
+                        null,
+                    }
+                  : null,
+            },
+          }
+        : {}),
     });
   } catch (error: unknown) {
     if (
