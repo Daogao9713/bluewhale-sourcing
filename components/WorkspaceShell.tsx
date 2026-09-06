@@ -14,7 +14,34 @@ export default function WorkspaceShell(){
  const [tab,setTab]=useState<Tab>("dashboard"); const [mobile,setMobile]=useState(false);
  const [data,setData]=useState<WorkspaceData>({projects:[],suppliers:[],rfqs:[],inquiries:[]}); const [error,setError]=useState(""); const [loading,setLoading]=useState(false);
  const t=copy[lang];
- useEffect(()=>{const timer=window.setTimeout(()=>{setKey(sessionStorage.getItem("bluewhale_admin_key")||"");setLang((localStorage.getItem("bluewhale_workspace_lang") as Lang)||"zh")},0);return()=>window.clearTimeout(timer)},[]);
+ useEffect(()=>{
+  let cancelled=false;
+  const timer=window.setTimeout(()=>{
+   const storedKey=sessionStorage.getItem("bluewhale_admin_key")||"";
+   setLang((localStorage.getItem("bluewhale_workspace_lang") as Lang)||"zh");
+
+   if(!storedKey)return;
+
+   void fetch("/api/workspace/auth",{
+    headers:{"x-admin-key":storedKey},
+    credentials:"same-origin",
+    cache:"no-store",
+   }).then(async response=>{
+    const payload=await response.json().catch(()=>({}));
+    if(cancelled)return;
+
+    if(!response.ok||payload.authenticated!==true){
+     sessionStorage.removeItem("bluewhale_admin_key");
+     return;
+    }
+
+    setKey(storedKey);
+   }).catch(()=>{
+    if(!cancelled)sessionStorage.removeItem("bluewhale_admin_key");
+   });
+  },0);
+  return()=>{cancelled=true;window.clearTimeout(timer)}
+ },[]);
  useEffect(() => {
   if (!mobile) return;
 
@@ -43,9 +70,39 @@ export default function WorkspaceShell(){
  }, [key]);
  const load=useCallback(async function load(){setLoading(true);setError("");try{const p=await request("/api/workspace");setData({projects:p.projects||[],suppliers:p.suppliers||[],rfqs:p.rfqs||[],inquiries:p.inquiries||[]})}catch(e:unknown){setError(e instanceof Error?e.message:"Request failed")}finally{setLoading(false)}}, [request]);
  useEffect(()=>{if(!key)return;const timer=window.setTimeout(()=>void load(),0);return()=>window.clearTimeout(timer)},[key,load]);
- function unlock(e:FormEvent){e.preventDefault();const x=draft.trim();if(!x)return;sessionStorage.setItem("bluewhale_admin_key",x);setKey(x)}
+ async function unlock(e:FormEvent){
+  e.preventDefault();
+  const x=draft.trim();
+  if(!x||loading)return;
+
+  setLoading(true);
+  setError("");
+
+  try{
+   const response=await fetch("/api/workspace/auth",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({key:x}),
+    credentials:"same-origin",
+    cache:"no-store",
+   });
+   const payload=await response.json().catch(()=>({}));
+
+   if(!response.ok||payload.authenticated!==true){
+    setError(typeof payload.error==="string"?payload.error:"Authentication failed.");
+    return;
+   }
+
+   sessionStorage.setItem("bluewhale_admin_key",x);
+   setKey(x);
+  }catch{
+   setError("Workspace authentication temporarily unavailable.");
+  }finally{
+   setLoading(false);
+  }
+ }
  function switchLang(x:Lang){setLang(x);localStorage.setItem("bluewhale_workspace_lang",x)}
- if(!key)return <main className="xy-workspace relative grid min-h-screen place-items-center overflow-hidden p-5"><div className="pointer-events-none absolute left-[10%] top-[8%] h-72 w-72 rounded-full bg-blue-300/10 blur-[100px]"/><div className="pointer-events-none absolute bottom-[5%] right-[8%] h-72 w-72 rounded-full bg-amber-300/10 blur-[100px]"/><form onSubmit={unlock} className="xy-workspace-panel relative w-full max-w-[440px] rounded-[32px] p-7 sm:p-9"><div><div className="text-sm font-semibold">江苏星玥阳科技有限公司</div><div className="mt-0.5 text-[9px] font-bold tracking-[.18em] text-slate-400">UNIVERSE TECH</div></div><div className="mt-10 text-[9px] font-bold tracking-[.2em] text-amber-600">ENTERPRISE WORKSPACE</div><h1 className="mt-2 text-3xl font-semibold tracking-[-.04em]">Industrial OS</h1><p className="mt-3 text-sm leading-6 text-slate-500">企业运营、内容管理与工业数据工作台</p><input className="xy-cms-field mt-8 px-4 py-3.5" type="password" value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Workspace admin key"/><button className="xy-cms-primary mt-3 w-full rounded-2xl py-3.5 text-sm font-semibold">进入工作台</button><div className="mt-6 flex items-center justify-between border-t border-slate-200/50 pt-5 text-[10px] text-slate-400"><span>XINGYUEYANG INDUSTRIAL OS</span><span>X0.44</span></div></form></main>;
+ if(!key)return <main className="xy-workspace relative grid min-h-screen place-items-center overflow-hidden p-5"><div className="pointer-events-none absolute left-[10%] top-[8%] h-72 w-72 rounded-full bg-blue-300/10 blur-[100px]"/><div className="pointer-events-none absolute bottom-[5%] right-[8%] h-72 w-72 rounded-full bg-amber-300/10 blur-[100px]"/><form onSubmit={unlock} className="xy-workspace-panel relative w-full max-w-[440px] rounded-[32px] p-7 sm:p-9"><div><div className="text-sm font-semibold">江苏星玥阳科技有限公司</div><div className="mt-0.5 text-[9px] font-bold tracking-[.18em] text-slate-400">UNIVERSE TECH</div></div><div className="mt-10 text-[9px] font-bold tracking-[.2em] text-amber-600">ENTERPRISE WORKSPACE</div><h1 className="mt-2 text-3xl font-semibold tracking-[-.04em]">Industrial OS</h1><p className="mt-3 text-sm leading-6 text-slate-500">企业运营、内容管理与工业数据工作台</p><input className="xy-cms-field mt-8 px-4 py-3.5" type="password" value={draft} onChange={e=>setDraft(e.target.value)} placeholder="Workspace admin key"/><button disabled={loading} className="xy-cms-primary mt-3 w-full rounded-2xl py-3.5 text-sm font-semibold">{loading?"验证中…":"进入工作台"}</button>{error&&<p role="alert" className="mt-3 text-sm text-red-600">{error}</p>}<div className="mt-6 flex items-center justify-between border-t border-slate-200/50 pt-5 text-[10px] text-slate-400"><span>XINGYUEYANG INDUSTRIAL OS</span><span>X0.44</span></div></form></main>;
  const nav:[Tab|string,string,string][]=[["dashboard",t.dashboard,"DB"],["news",t.news,"NW"],["productcms",lang==="zh"?"设备管理":"Product CMS","PD"],["casecms",lang==="zh"?"工程案例":"Case CMS","CS"],["projects",t.projects,"PR"],["suppliers",t.suppliers,"SP"],["rfq",t.rfq,"RQ"],["inquiries",t.inquiries,"IN"],["documents",t.documents,"DC"],["integrations",t.integrations,"IX"],["ai",t.ai,"AI"]];
   
   return <div className="xy-workspace min-h-screen text-slate-950">
