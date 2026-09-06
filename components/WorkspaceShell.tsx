@@ -14,34 +14,48 @@ export default function WorkspaceShell(){
  const [tab,setTab]=useState<Tab>("dashboard"); const [mobile,setMobile]=useState(false);
  const [data,setData]=useState<WorkspaceData>({projects:[],suppliers:[],rfqs:[],inquiries:[]}); const [error,setError]=useState(""); const [loading,setLoading]=useState(false);
  const t=copy[lang];
- useEffect(()=>{
-  let cancelled=false;
-  const timer=window.setTimeout(()=>{
-   const storedKey=sessionStorage.getItem("bluewhale_admin_key")||"";
-   setLang((localStorage.getItem("bluewhale_workspace_lang") as Lang)||"zh");
+ useEffect(() => {
+  let cancelled = false;
 
-   if(!storedKey)return;
+  const timer = window.setTimeout(() => {
+    setLang(
+      (localStorage.getItem(
+        "bluewhale_workspace_lang"
+      ) as Lang) || "zh"
+    );
 
-   void fetch("/api/workspace/auth",{
-    headers:{"x-admin-key":storedKey},
-    credentials:"same-origin",
-    cache:"no-store",
-   }).then(async response=>{
-    const payload=await response.json().catch(()=>({}));
-    if(cancelled)return;
+    void fetch("/api/workspace/auth", {
+      credentials: "same-origin",
+      cache: "no-store",
+    })
+      .then(async (response) => {
+        const payload = await response
+          .json()
+          .catch(() => ({}));
 
-    if(!response.ok||payload.authenticated!==true){
-     sessionStorage.removeItem("bluewhale_admin_key");
-     return;
-    }
+        if (cancelled) return;
 
-    setKey(storedKey);
-   }).catch(()=>{
-    if(!cancelled)sessionStorage.removeItem("bluewhale_admin_key");
-   });
-  },0);
-  return()=>{cancelled=true;window.clearTimeout(timer)}
- },[]);
+        if (
+          response.ok &&
+          payload.authenticated === true
+        ) {
+          /*
+           * This is only an in-memory authentication flag.
+           * The actual credential lives in the HttpOnly cookie.
+           */
+          setKey("session");
+        }
+      })
+      .catch(() => {
+        // Remain on the login screen.
+      });
+  }, 0);
+
+  return () => {
+    cancelled = true;
+    window.clearTimeout(timer);
+  };
+}, []);
  useEffect(() => {
   if (!mobile) return;
 
@@ -64,10 +78,10 @@ export default function WorkspaceShell(){
 }, [mobile]);
 
  const request=useCallback(async function request(path:string,init:RequestInit={}):Promise<ApiPayload>{
-  const h=new Headers(init.headers); if(key)h.set("x-admin-key",key); if(init.body)h.set("Content-Type","application/json");
+  const h=new Headers(init.headers); if(init.body)h.set("Content-Type","application/json");
   const r=await fetch(path,{...init,headers:h,credentials:"same-origin",cache:"no-store"}); const p=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(p.error||`Request failed (${r.status})`); return p;
- }, [key]);
+  }, []);
  const load=useCallback(async function load(){setLoading(true);setError("");try{const p=await request("/api/workspace");setData({projects:p.projects||[],suppliers:p.suppliers||[],rfqs:p.rfqs||[],inquiries:p.inquiries||[]})}catch(e:unknown){setError(e instanceof Error?e.message:"Request failed")}finally{setLoading(false)}}, [request]);
  useEffect(()=>{if(!key)return;const timer=window.setTimeout(()=>void load(),0);return()=>window.clearTimeout(timer)},[key,load]);
  async function unlock(e:FormEvent){
@@ -93,8 +107,8 @@ export default function WorkspaceShell(){
     return;
    }
 
-   sessionStorage.setItem("bluewhale_admin_key",x);
-   setKey(x);
+  setDraft("");
+  setKey("session");
   }catch{
    setError("Workspace authentication temporarily unavailable.");
   }finally{
@@ -157,7 +171,7 @@ export default function WorkspaceShell(){
   </div>
 </div>
   <nav className="flex-1 space-y-1 overflow-y-auto p-3">{nav.map(([id,label,short])=>id==="news"?<Link key={id} href="/workspace/news" onClick={() => setMobile(false)} className="xy-workspace-nav flex gap-3 rounded-xl px-3 py-3 text-sm text-slate-400"><b className="w-7 text-[10px]">{short}</b>{label}</Link>:id==="productcms"?<Link key={id} href="/workspace/products" onClick={() => setMobile(false)} className="xy-workspace-nav flex gap-3 rounded-xl px-3 py-3 text-sm text-slate-400"><b className="w-7 text-[10px]">{short}</b>{label}</Link>:id==="casecms"?<Link key={id} href="/workspace/cases" onClick={() => setMobile(false)} className="xy-workspace-nav flex gap-3 rounded-xl px-3 py-3 text-sm text-slate-400"><b className="w-7 text-[10px]">{short}</b>{label}</Link>:<button key={id} onClick={()=>{setTab(id as Tab);setMobile(false)}} className={`xy-workspace-nav flex w-full gap-3 rounded-xl px-3 py-3 text-left text-sm ${tab===id?"xy-workspace-nav-active":"text-slate-400"}`}><b className="w-7 text-[10px]">{short}</b>{label}</button>)}</nav>
-  <div className="border-t border-white/10 p-3"><Link href="/" className="block px-3 py-2 text-xs text-slate-400">{t.public} ↗</Link><button onClick={()=>{sessionStorage.removeItem("bluewhale_admin_key");setKey("")}} className="px-3 py-2 text-xs text-slate-500">{t.lock}</button></div></div>
+  <div className="border-t border-white/10 p-3"><Link href="/" className="block px-3 py-2 text-xs text-slate-400">{t.public} ↗</Link><button onClick={()=>setKey("")} className="px-3 py-2 text-xs text-slate-500">{t.lock}</button></div></div>
   </aside>
     <div className="lg:pl-[260px]"><header className="sticky top-0 z-30 px-3 pt-3 lg:px-6 lg:pt-4"><div className="xy-workspace-topbar flex min-h-16 items-center justify-between rounded-2xl px-4 lg:px-5"><div className="flex min-w-0 items-center gap-3"><button onClick={()=>setMobile(!mobile)} className="xy-glass-button rounded-xl px-3 py-2 text-xs lg:hidden">MENU</button><div className="min-w-0"><div className="truncate text-[9px] font-semibold tracking-[.15em] text-slate-400 sm:text-[10px]">JIANGSU XINGYUEYANG TECHNOLOGY</div><div className="mt-0.5 truncate text-sm font-semibold text-slate-900">{nav.find(x=>x[0]===tab)?.[1]}</div></div></div><div className="flex shrink-0 gap-2"><button onClick={()=>switchLang(lang==="zh"?"en":"zh")} className="xy-glass-button rounded-full px-3 py-2 text-xs">{lang==="zh"?"EN":"中文"}</button><button onClick={load} className="xy-glass-button hidden rounded-full px-3 py-2 text-xs sm:block">{t.refresh}</button></div></div></header>
   <main className="p-3 pt-5 sm:p-4 sm:pt-6 lg:px-6 lg:pb-8 lg:pt-6">{error&&<div className="mb-5 rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm">{error}</div>}
