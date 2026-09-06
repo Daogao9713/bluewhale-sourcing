@@ -17,7 +17,7 @@ export function db() {
     required("SUPABASE_SERVICE_ROLE_KEY"),
     {
       auth: { autoRefreshToken: false, persistSession: false },
-      global: { headers: { "X-Client-Info": "bluewhale-server-v0.20" } },
+      global: { headers: { "X-Client-Info": "xingyueyang-server-x0.45" } },
     }
   );
 
