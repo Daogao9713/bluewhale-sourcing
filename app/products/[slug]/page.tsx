@@ -3,8 +3,69 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import XingyueyangHeader from "@/components/XingyueyangHeader";
 import { publicProduct } from "@/lib/products/server";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const product =
+    await publicProduct(slug);
+
+  if (!product) {
+    return {
+      title: "产品未找到",
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const title = [
+    product.model,
+    product.name,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const description =
+    product.subtitle ||
+    product.description ||
+    `${title}，江苏星玥阳科技有限公司工业在线监测产品。`;
+
+  return {
+    title,
+
+    description,
+
+    alternates: {
+      canonical: `/products/${slug}`,
+    },
+
+    openGraph: {
+      type: "website",
+      url: `/products/${slug}`,
+      title,
+      description,
+
+      ...(product.image_url
+        ? {
+            images: [
+              {
+                url: product.image_url,
+                alt: title,
+              },
+            ],
+          }
+        : {}),
+    },
+  };
+}
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

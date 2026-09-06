@@ -28,9 +28,7 @@ export default function ProductAdmin() {
   const [err, setErr] = useState("");
 
   const api = useCallback(async function api(path: string, init: RequestInit = {}) {
-    const key = sessionStorage.getItem("bluewhale_admin_key") || "";
     const h = new Headers(init.headers);
-    h.set("x-admin-key", key);
     if (init.body && !(init.body instanceof FormData)) {
       h.set("Content-Type", "application/json");
     }

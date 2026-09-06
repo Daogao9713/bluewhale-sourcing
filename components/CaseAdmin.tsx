@@ -43,11 +43,6 @@ export default function CaseAdmin() {
   const api = useCallback(async function api(path: string, init: RequestInit = {}) {
     const headers = new Headers(init.headers);
 
-    headers.set(
-      "x-admin-key",
-      sessionStorage.getItem("bluewhale_admin_key") || ""
-    );
-
     if (init.body && !(init.body instanceof FormData)) {
       headers.set("Content-Type", "application/json");
     }

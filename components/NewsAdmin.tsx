@@ -119,14 +119,14 @@ export default function NewsAdmin() {
      ======================================================= */
 
   useEffect(() => {
-    const stored =
-      window.sessionStorage.getItem(
-        "bluewhale_admin_key"
-      ) || "";
-
-    if (stored) {
-      window.setTimeout(() => setKey(stored), 0);
-    }
+    void fetch("/api/workspace/auth", {
+      credentials: "same-origin",
+      cache: "no-store",
+    })
+      .then((response) => {
+        if (response.ok) setKey("session");
+      })
+      .catch(() => {});
   }, []);
 
   const api = useCallback(async function api(
@@ -135,11 +135,6 @@ export default function NewsAdmin() {
   ) {
     const headers =
       new Headers(init.headers);
-
-    headers.set(
-      "x-admin-key",
-      key
-    );
 
     if (init.body) {
       headers.set(
@@ -151,6 +146,7 @@ export default function NewsAdmin() {
     const response = await fetch(path, {
       ...init,
       headers,
+      credentials: "same-origin",
       cache: "no-store",
     });
 
@@ -167,7 +163,7 @@ export default function NewsAdmin() {
     }
 
     return data;
-  }, [key]);
+  }, []);
 
   const load = useCallback(async function load(search = qRef.current) {
     setLoading(true);
@@ -234,7 +230,7 @@ export default function NewsAdmin() {
     return () => window.clearTimeout(timer);
   }, [key, load, loadStats]);
 
-  function unlock(
+  async function unlock(
     event: FormEvent
   ) {
     event.preventDefault();
@@ -244,19 +240,43 @@ export default function NewsAdmin() {
 
     if (!value) return;
 
-    window.sessionStorage.setItem(
-      "bluewhale_admin_key",
-      value
-    );
+    try {
+      const response = await fetch(
+        "/api/workspace/auth",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ key: value }),
+          credentials: "same-origin",
+          cache: "no-store",
+        }
+      );
 
-    setKey(value);
+      const payload = await response
+        .json()
+        .catch(() => ({}));
+
+      if (!response.ok || payload.authenticated !== true) {
+        setNotice(
+          typeof payload.error === "string"
+            ? payload.error
+            : "Authentication failed."
+        );
+        return;
+      }
+
+      setNotice("");
+      setKey("session");
+    } catch {
+      setNotice(
+        "Workspace authentication temporarily unavailable."
+      );
+    }
   }
 
   function logout() {
-    window.sessionStorage.removeItem(
-      "bluewhale_admin_key"
-    );
-
     setKey("");
     setDraftKey("");
   }
