@@ -21,6 +21,10 @@ test('overspeed degrades quality; AI explains and restores production gradually'
   state = reduce(state, { type: 'execute' });
   assert.equal(state.params.speed, 60);
   assert.equal(state.metrics.yieldRate, poor.yieldRate, 'actuation must not instantly rewrite measured quality');
+  assert.ok(state.lastDecision);
+  assert.equal(state.lastDecision.before.yieldRate, poor.yieldRate);
+  assert.ok(state.lastDecision.changes.some(change => change.includes('冲压节拍')));
+  assert.ok(state.lastDecision.evidence.rows.length > 0);
   state = advance(state, 20);
   assert.ok(state.metrics.yieldRate > 99);
   assert.ok(state.metrics.burr < 1);

@@ -84,6 +84,15 @@ export function mesEvidence(p: Parameters, wear: boolean) {
   return { rows, count, yieldRate: avg('yieldRate'), cpk: avg('cpk'), burr: avg('burr') };
 }
 export type Plan = { title: string; reason: string; next: Parameters; manual: boolean; evidence: ReturnType<typeof mesEvidence>; predicted: ReturnType<typeof processModel> };
+export type Decision = {
+  reason: string;
+  changes: string[];
+  evidence: ReturnType<typeof mesEvidence>;
+  predicted: ReturnType<typeof processModel>;
+  before: { cpk: number; yieldRate: number; burr: number };
+  automatic: boolean;
+  executedAt: string;
+};
 export function diagnose(p: Parameters, wear: boolean, metrics: Metrics): Plan {
   const evidence = mesEvidence(p, wear);
   const next = { ...baseline };
@@ -106,6 +115,7 @@ export type FactoryState = {
   produced: number; good: number; buffer: number; scenario: Scenario;
   messages: Entry[]; audit: Audit[]; plan: Plan | null; revision: number;
   baselineResult: { cpk: number; yieldRate: number; burr: number } | null;
+  lastDecision: Decision | null;
   badTicks: number; cooldown: number; maintenance: boolean;
 };
 function metricsFor(p: Parameters, wear: boolean, samples: number[]): Metrics {
@@ -119,7 +129,7 @@ export function initialState(): FactoryState {
   return { params: { ...baseline }, wear: false, running: true, auto: false, tick: 0, samples, metrics,
     history: [{ cpk: metrics.cpk, yieldRate: metrics.yieldRate, burr: metrics.burr }], produced: 0, good: 0, buffer: 0, scenario: 'normal',
     messages: [{ id: 0, time: '09:00:00', role: 'ai', text: '我是产线 AI 演示助手。选择一个异常场景，或提高冲压节拍，然后问我“为什么良率下降？”。我会查询合成 MES 批次，解释原因，并给出可执行的协同调参方案。' }],
-    audit: [], plan: null, revision: 0, baselineResult: null, badTicks: 0, cooldown: 0, maintenance: false };
+    audit: [], plan: null, revision: 0, baselineResult: null, lastDecision: null, badTicks: 0, cooldown: 0, maintenance: false };
 }
 function append(s: FactoryState, role: Entry['role'], text: string): FactoryState {
   return { ...s, revision: s.revision + 1, messages: [...s.messages, { id: s.revision + 1, time: formatTime(s.tick), role, text }].slice(-40) };
@@ -135,7 +145,8 @@ function execute(s: FactoryState, automatic = false): FactoryState {
   const changes = controls.filter(c => s.params[c.key] !== plan.next[c.key]).map(c => `${c.label} ${s.params[c.key]}→${plan.next[c.key]} ${c.unit}`);
   if (!changes.length) return append({ ...s, plan: null, cooldown: 12 }, 'ai', '当前已处于基准配方，继续观察 32 件滚动窗口；无需重复调参。若持续不达标，请停线人工复测。');
   const before = { cpk: s.metrics.cpk, yieldRate: s.metrics.yieldRate, burr: s.metrics.burr };
-  return log(append({ ...s, params: plan.next, plan: null, baselineResult: before, cooldown: 12, badTicks: 0 }, 'ai', `${automatic ? '自动接管' : '已执行'}：${changes.join('；')}。依据：${plan.reason} 合成 MES 匹配 ${plan.evidence.rows.length} 批 / ${plan.evidence.count} 件（速度 ±8 SPM、同磨损状态）。预计稳定后良率约 ${plan.predicted.yieldRate.toFixed(2)}%；接下来观察窗口逐步更新，预测不是实测承诺。`), `${automatic ? '自动' : '操作员授权'}调参：${changes.join('；')}`);
+  const lastDecision: Decision = { reason: plan.reason, changes, evidence: plan.evidence, predicted: plan.predicted, before, automatic, executedAt: formatTime(s.tick) };
+  return log(append({ ...s, params: plan.next, plan: null, baselineResult: before, lastDecision, cooldown: 12, badTicks: 0 }, 'ai', `${automatic ? '自动接管' : '已执行'}：${changes.join('；')}。依据：${plan.reason} 合成 MES 匹配 ${plan.evidence.rows.length} 批 / ${plan.evidence.count} 件（速度 ±8 SPM、同磨损状态）。预计稳定后良率约 ${plan.predicted.yieldRate.toFixed(2)}%；接下来观察窗口逐步更新，预测不是实测承诺。`), `${automatic ? '自动' : '操作员授权'}调参：${changes.join('；')}`);
 }
 export type Action = { type: 'tick' } | { type: 'parameter'; key: keyof Parameters; value: number } | { type: 'scenario'; scenario: Scenario } | { type: 'ask'; question: string } | { type: 'execute' } | { type: 'toggle-running' } | { type: 'auto' } | { type: 'maintenance' } | { type: 'reset' };
 export function factoryReducer(s: FactoryState, action: Action): FactoryState {
@@ -163,7 +174,7 @@ export function factoryReducer(s: FactoryState, action: Action): FactoryState {
     if (action.scenario === 'overspeed') Object.assign(p, { speed: 94, leveler: 23.5, film: 23.5, cleaning: 23, loader: 102, unloader: 102, marking: 110 });
     if (action.scenario === 'film') p.film = 22;
     if (action.scenario === 'robot') p.unloader = 40;
-    return log(append({ ...s, params: p, scenario: action.scenario, wear: action.scenario === 'wear', running: true, plan: null, baselineResult: null, cooldown: 0 }, 'system', `载入场景：${scenarios.find(x => x.key === action.scenario)!.name}。参数已改变，工件将在后续采样中反映变化。`), `演示场景：${action.scenario}`);
+    return log(append({ ...s, params: p, scenario: action.scenario, wear: action.scenario === 'wear', running: true, plan: null, baselineResult: null, lastDecision: null, cooldown: 0 }, 'system', `载入场景：${scenarios.find(x => x.key === action.scenario)!.name}。参数已改变，工件将在后续采样中反映变化。`), `演示场景：${action.scenario}`);
   }
   if (action.type === 'execute') return execute(s);
   if (action.type === 'ask') {

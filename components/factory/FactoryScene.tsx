@@ -6,7 +6,15 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { Parameters } from '@/lib/factory/simulation';
 import { stations } from '@/lib/factory/simulation';
 
-type Props = { params: Parameters; running: boolean; warning: boolean; buffer: number; selected: number; onSelect: (index: number) => void };
+type Props = {
+  params: Parameters;
+  running: boolean;
+  warning: boolean;
+  buffer: number;
+  selected: number;
+  defects: { burr: number; surface: number; handling: number; filmError: number; wear: boolean };
+  onSelect: (index: number) => void;
+};
 
 export default function FactoryScene(props: Props) {
   const host = useRef<HTMLDivElement>(null);
@@ -20,7 +28,10 @@ export default function FactoryScene(props: Props) {
     if (!root) return;
     let renderer: THREE.WebGLRenderer;
     try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' }); }
-    catch { setFailed(true); return; }
+    catch {
+      const failureTimer = window.setTimeout(() => setFailed(true), 0);
+      return () => window.clearTimeout(failureTimer);
+    }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -59,6 +70,8 @@ export default function FactoryScene(props: Props) {
       amber: new THREE.MeshStandardMaterial({ color: 0xffb631, metalness: .4, roughness: .35 }),
       cyan: new THREE.MeshStandardMaterial({ color: 0x46d6ef, emissive: 0x199eb5, emissiveIntensity: .6, roughness: .35 }),
       green: new THREE.MeshStandardMaterial({ color: 0x62f1b1, emissive: 0x1ad583, emissiveIntensity: .8 }),
+      red: new THREE.MeshStandardMaterial({ color: 0xff586c, emissive: 0xa70f2b, emissiveIntensity: 1.4, metalness: .25, roughness: .3 }),
+      redGlass: new THREE.MeshPhysicalMaterial({ color: 0xff405a, emissive: 0x9b1028, emissiveIntensity: 1.2, transparent: true, opacity: .18, roughness: .15, depthWrite: false }),
       glass: new THREE.MeshPhysicalMaterial({ color: 0x80d9ed, metalness: .05, roughness: .12, transparent: true, opacity: .22, side: THREE.DoubleSide, depthWrite: false }),
     };
     const geometries: THREE.BufferGeometry[] = [];
@@ -123,7 +136,8 @@ export default function FactoryScene(props: Props) {
         if (i === 3 || i === 2) {
           const roll = roller(group, 0, 2.42, 0, .42, 1.6, i === 3 ? mats.cyan : mats.white);
           rotors.push({ mesh: roll, key: i === 3 ? 'film' : 'cleaning' });
-          box(group, 0, 1.87, 0, .045, 1.15, 1.4, i === 3 ? mats.glass : mats.white);
+          const web = box(group, 0, 1.87, 0, .045, 1.15, 1.4, i === 3 ? mats.glass : mats.white);
+          if (i === 3) web.userData.filmWeb = true;
         }
       } else if (i === 4) {
         box(group, .65, 1.7, -.8, .25, 2.8, .3, mats.white);
@@ -149,6 +163,14 @@ export default function FactoryScene(props: Props) {
     });
     const ram = box(groups[5], 0, 2.35, 0, 1.85, .5, 1.8, mats.amber);
     const scanner = box(groups[6], 0, 1.3, 0, .025, .04, 1.3, mats.green);
+    const filmWeb = groups[3].children.find(child => child.userData.filmWeb) as THREE.Mesh | undefined;
+    const aoiPart = box(groups[6], 0, 1.36, 0, .62, .08, .92, mats.steel);
+    const detectionBox = box(groups[6], 0, 1.58, 0, .78, .48, 1.08, mats.redGlass);
+    detectionBox.visible = false;
+    const defectMark = box(groups[6], .18, 1.63, .35, .18, .05, .15, mats.red);
+    defectMark.visible = false;
+    const moldAlert = box(groups[5], 0, 1.72, 0, 2.15, .95, 2.12, mats.redGlass);
+    moldAlert.visible = false;
     function robot(x: number, z: number) {
       const base = new THREE.Group(); base.position.set(x, 0, z); scene.add(base);
       box(base, 0, .15, 0, .9, .3, .9, mats.navy);
@@ -164,6 +186,14 @@ export default function FactoryScene(props: Props) {
     const loader = robot(5, 2.1), unloader = robot(9, -2.1);
     const parts = Array.from({ length: 20 }, (_, i) => {
       const part = box(scene, -12 + i * 1.25, 1.33, 0, .5, .035, .85, mats.steel);
+      return part;
+    });
+    box(scene, 11.8, .75, -2.1, 3.2, .16, .9, mats.navy);
+    box(scene, 13.1, .52, -3.05, 1.5, .85, 1.45, mats.dark);
+    for (const z of [-3.75, -2.35]) box(scene, 13.1, 1.02, z, 1.55, .12, .08, mats.red);
+    const ngParts = Array.from({ length: 7 }, (_, i) => {
+      const part = box(scene, 10.7 + i * .38, .91 + (i % 2) * .07, -2.1 - i * .13, .5, .04, .82, mats.red);
+      part.visible = false;
       return part;
     });
     const stock = Array.from({ length: 10 }, (_, i) => box(scene, 12.8, .4 + i * .08, 2.5, .75, .05, 1.2, mats.steel));
@@ -211,6 +241,8 @@ export default function FactoryScene(props: Props) {
       const dt = Math.min((now - previous) / 1000, .06); previous = now;
       if (document.hidden || contextLost) return;
       const p = live.current;
+      const defectRate = p.defects.burr + p.defects.surface + p.defects.handling;
+      const aoiAlarm = defectRate > 1 || p.defects.wear;
       if (p.running && !reduced.matches) {
         phase += dt * p.params.speed / 60;
         loaderPhase += dt * p.params.loader / 60;
@@ -224,9 +256,29 @@ export default function FactoryScene(props: Props) {
         rotors.forEach(({ mesh, key }) => { mesh.rotation.y += dt * p.params[key] / 10; });
         const actual = Math.min(p.params.speed, p.params.loader, p.params.unloader, p.params.marking, p.params.leveler / .25);
         parts.forEach(part => { part.position.x += dt * actual / 35; if (part.position.x > 12.5) part.position.x = -12.5; });
+        ngParts.forEach((part, i) => {
+          if (!part.visible) return;
+          part.position.x += dt * actual / 48;
+          part.position.z -= dt * .18;
+          if (part.position.x > 13.4) part.position.set(10.7 + i * .22, .91 + (i % 2) * .07, -2.1 - i * .1);
+        });
+      }
+      const pulse = .55 + Math.sin(now * .008) * .35;
+      detectionBox.visible = aoiAlarm;
+      defectMark.visible = aoiAlarm;
+      moldAlert.visible = p.defects.wear || p.defects.burr > 2;
+      mats.redGlass.opacity = .12 + pulse * .18;
+      scanner.material = aoiAlarm ? mats.red : mats.green;
+      aoiPart.material = aoiAlarm ? mats.red : mats.steel;
+      if (filmWeb) {
+        const mismatch = Math.min(.35, p.defects.filmError);
+        filmWeb.rotation.z = mismatch > .08 ? Math.sin(now * .006) * mismatch * .35 : 0;
+        filmWeb.scale.z = 1 + (mismatch > .08 ? Math.sin(now * .01) * .08 : 0);
+        filmWeb.material = mismatch > .08 ? mats.redGlass : mats.glass;
       }
       groups.forEach((_, i) => { highlights[i].visible = i === p.selected; lamps[i].material = !p.running ? mats.amber : p.warning && (i === 5 || i === 6) ? mats.amber : mats.green; });
       stock.forEach((part, i) => { part.visible = i < Math.ceil(p.buffer / 6); });
+      ngParts.forEach((part, i) => { part.visible = aoiAlarm && i < Math.min(7, Math.ceil(defectRate / 1.4)); });
       orbit.update(); renderer.render(scene, camera);
     }
     frame = requestAnimationFrame(render);
@@ -244,6 +296,7 @@ export default function FactoryScene(props: Props) {
 
   return <div className="factory-scene-shell">
     <div ref={host} className="factory-scene-canvas" />
+    {props.warning ? <div className="factory-scene-alert" role="status"><span>AOI LIVE</span><strong>{props.defects.wear ? '模具磨损 · NG 隔离' : props.defects.filmError > .08 ? '膜面异常 · 缺陷标记' : props.buffer > 10 ? '下料积料 · 缓冲上升' : '边缘毛刺 · NG 分流'}</strong><small>红色工件正在进入隔离料框</small></div> : null}
     {failed ? <div className="factory-scene-fallback"><strong>当前设备未能加载 3D 视图</strong><p>仍可使用下方工序、参数和 AI 完整体验仿真。</p><div>{stations.map((s, i) => <button key={s.name} onClick={() => props.onSelect(i)}>{i + 1}. {s.name}</button>)}</div></div> : null}
     <div className="factory-camera-tools" aria-label="三维视角">
       <button onClick={() => cameraAction.current('home')}>透视</button>
