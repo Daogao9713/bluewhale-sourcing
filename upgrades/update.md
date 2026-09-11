@@ -659,3 +659,405 @@ FAQ Chatbot
 Industrial Sales / Solution Copilot
 
 而安全边界继续保留。参数、价格、认证、测量精度、客户案例，没有 CMS / 已确认资料支撑就不能编。你 X0.44 现在这条原则是对的，不需要为了“智能”把幻觉闸门拆掉。
+
+
+
+X0.46：Content & Product Experience
+
+这是 X0.45 后第一轮可见升级，但不要再重做视觉语言。X0.44 已经建立 Industrial Liquid Glass，X0.46 应该是“把现有设计系统填满”。
+
+重点做产品详情页 2.0、工程案例详情页 2.0、News 内容体验、行业解决方案详情、产品参数结构化展示、产品对比、资料下载、移动端产品浏览体验，以及动态 Case / News SEO metadata 和 sitemap。
+
+AI 也可以第一次真正进入页面上下文。例如用户在 NC-300 页面问“这个设备适合什么煤种？”，AI 自动知道当前产品，而不是让用户重新解释。
+
+目标：
+
+从“企业官网”升级成“能辅助销售的产品网站”。
+
+X0.47：Reliability I
+
+不增加明显的新 UI。
+
+这一版专门消化 X0.46 带来的技术债，同时继续清理 X0.45 留下的 compatibility debt。
+
+重点是统一 Workspace/CMS authentication、API validation、错误处理、日志规范、AI timeout/retry、数据库 index、rate-limit 策略、404/500/error boundary、缓存策略、Supabase 查询错误传播。
+
+还应该正式解决历史命名：
+
+BLUEWHALE_ADMIN_KEY
+bluewhale_workspace_session
+bluewhale_site_lang
+BLUEWHALE_FIELD
+
+但不是直接 rename，而是设计 migration/deprecation path。
+
+目标：
+
+用户几乎看不出变化，但代码库明显更干净。
+
+X0.48：Workspace 2.0
+
+这一版我认为非常关键。
+
+现在 Workspace 更接近 ERP-LITE 的骨架。X0.48 开始让它真正产生业务价值。
+
+把：
+
+Inquiry
+   ↓
+Project
+   ↓
+Quotation
+   ↓
+Order / Contract
+   ↓
+Production
+   ↓
+Delivery
+   ↓
+After-sales
+
+做成明确业务链。
+
+Dashboard 不再只是几个 count，而是：
+
+今日询盘
+待跟进项目
+报价中
+执行中
+已交付
+本月项目金额
+最近客户活动
+异常事项
+
+同时加入项目详情页、客户档案、联系人、跟进记录、状态 Timeline、报价单生成、PDF Export、附件、内部备注。
+
+目标：
+
+从“后台管理页面”跨到真正的 ERP-LITE。
+
+这是商业价值很高的一版。
+
+X0.49：Data Integrity & Audit
+
+专门给 X0.48 擦屁股，而且要擦得非常认真。
+
+重点做数据库约束、外键关系、业务状态机、事务、一致性、权限边界、Audit Log、软删除、数据恢复、文件权限、分页、查询性能。
+
+例如不能再允许：
+
+项目已取消
+↓
+订单却显示执行中
+↓
+报价单还能继续修改
+
+开始建立真正的 business invariants。
+
+目标：
+
+数据开始值得信任。
+
+X0.50：AI Industrial Copilot 2.0
+
+这是一个适合做“大版本展示”的偶数版本。
+
+现在 AI 更多是 Chat。
+
+X0.50 开始变成 Agent。
+
+例如 Workspace 输入：
+
+帮我看看最近两周 NC-300 的客户情况。
+
+AI 可以结合：
+
+Inquiries
+Projects
+Products
+Cases
+News
+Documents
+
+回答：
+
+最近两周收到 7 个相关询盘，其中 3 个进入项目阶段。
+2 个来自煤电行业。
+当前有 1 个报价超过 7 天未跟进。
+
+然后提供：
+
+查看项目
+生成跟进摘要
+起草报价说明
+创建任务
+
+公开网站 AI 则继续负责：
+
+产品推荐
+应用场景判断
+技术问答
+项目需求采集
+Inquiry 转化
+
+也就是形成：
+
+Public AI
+    ↓
+Sales Qualification
+    ↓
+Inquiry
+    ↓
+Workspace
+    ↓
+Enterprise Copilot
+
+这会成为整个系统最有辨识度的一层。
+
+X0.51：AI Safety & Observability
+
+这是必须紧跟 X0.50 的奇数版本。
+
+做 AI usage log、token/cost monitoring、provider fallback、timeout、structured output validation、prompt injection 防御、权限隔离、AI action audit、PII/redaction、模型错误恢复。
+
+尤其明确：
+
+READ ACTION
+AI 可以直接执行
+
+WRITE ACTION
+AI 提议
+↓
+用户确认
+↓
+执行
+↓
+Audit Log
+
+不要让 Copilot 在后台自由修改业务数据库。
+
+目标：
+
+AI 从“聪明”变成“可控”。
+
+X0.52：Industrial Data Experience
+
+这一版开始真正体现“工业软件”身份。
+
+围绕星玥阳的产品方向，把：
+
+设备
+测量点
+实时数据
+趋势
+报警
+检测结果
+质量指标
+
+抽象成统一 Industrial Data Model。
+
+UI 可以出现：
+
+NC-300
+设备状态       ONLINE
+────────────────────
+灰分          18.2 %
+挥发分        27.4 %
+热值          5230 kcal/kg
+
+24h Trend
+──────╲____╱────
+
+最近报警       2
+数据更新时间   14:32:18
+
+初期完全可以用模拟数据 / Demo connector。
+
+这很重要，因为它让系统从：
+
+“仪器公司的官网 + ERP”
+
+开始变成：
+
+“仪器 + 数据 + 企业软件平台”。
+
+X0.53：Industrial Backend Hardening
+
+专门处理工业数据带来的工程问题。
+
+重点是时间序列数据模型、数据 retention、采样、aggregation、timezone、异常值、设备离线、connector health、idempotency、队列、重试、API authentication。
+
+同时定义 MES / ERP / WMS connector contract。
+
+目标：
+
+为真实设备接入做准备，而不是继续靠 Demo JSON。
+
+X0.54：Customer Portal
+
+这是另一个很有商业价值的偶数版本。
+
+增加客户门户：
+
+/customer
+
+客户登录以后可以看到自己的：
+
+项目
+报价
+合同
+设备
+资料
+交付状态
+售后
+技术文档
+
+甚至：
+
+设备 SN
+安装日期
+保修状态
+软件版本
+说明书
+检测报告
+售后记录
+
+于是系统第一次形成三个 Surface：
+
+PUBLIC
+官网 / AI / 产品
+
+CUSTOMER
+项目 / 设备 / 服务
+
+INTERNAL
+Workspace / CMS / ERP / AI
+
+这已经很接近一个完整 B2B 工业数字平台。
+
+X0.55：Security & Permission Model
+
+客户门户上线后必须马上补这一版。
+
+核心从“一个 Admin Key”正式升级成：
+
+User
+Organization
+Role
+Permission
+Session
+
+例如：
+
+Super Admin
+Sales
+Engineer
+Content Editor
+Management
+Customer Admin
+Customer User
+
+并实现真正的 RBAC、tenant isolation、session management、password reset、审计、登录保护。
+
+到这里，BLUEWHALE_ADMIN_KEY 才可以正式退休。
+
+这是从 prototype authentication 跨到 production identity system 的节点。
+
+之后我建议 X0.56 到 X0.59 做一次“商业化冲刺”：
+
+Version	主题	核心
+X0.56	Sales & Service	CRM Pipeline、售后工单、设备生命周期、通知
+X0.57	Reliability III	CRM/工单状态机、通知可靠性、权限审计、性能
+X0.58	Analytics	管理驾驶舱、销售漏斗、产品/行业分析、工业数据报表
+X0.59	Release Hardening	全系统测试、安全、性能、备份、恢复、迁移、文档
+
+然后不要继续 X0.60、X0.61 无限磨。
+
+如果 X0.59 达到我们的 release gate，就直接：
+
+X1.00 Production Platform
+
+X1.00 不应该塞一大堆新功能。
+
+它代表的是成熟度：
+
+Public Corporate Website
+        │
+        ├── Product Platform
+        ├── Solution Platform
+        ├── Engineering Cases
+        └── Public AI
+                 │
+                 ▼
+              Inquiry
+                 │
+                 ▼
+┌─────────────────────────────────┐
+│       XINGYUEYANG INDUSTRIAL OS │
+│                                 │
+│ CRM → Project → Quote → Order   │
+│                  │              │
+│                  ▼              │
+│            Production / MES     │
+│                  │              │
+│                  ▼              │
+│           Industrial Data       │
+│                                 │
+│        Enterprise Copilot       │
+└────────────────┬────────────────┘
+                 │
+                 ▼
+          Customer Portal
+
+我会把整个路线进一步分成四个时代：
+
+X0.46–X0.47   WEBSITE MATURITY
+              官网成熟期
+
+X0.48–X0.51   BUSINESS OS
+              ERP-LITE + AI
+
+X0.52–X0.55   INDUSTRIAL PLATFORM
+              工业数据 + 客户门户
+
+X0.56–X0.59   COMMERCIALIZATION
+              CRM / Service / Analytics
+
+X1.00         PRODUCTION PLATFORM
+
+而且以后每一对版本都遵循同一个循环：
+
+X0.48
+Build
+  ↓
+用户价值增加
+  ↓
+复杂度增加
+  ↓
+X0.49
+Harden
+  ↓
+复杂度下降
+  ↓
+稳定性增加
+  ↓
+X0.50
+Build again
+
+这样不会出现最常见的项目死法：连续十个版本只加功能，最后代码库变成一碗 TypeScript 意大利面。
+
+还有一个规则我建议从 X0.46 正式加入：奇数版可以删功能。
+
+如果某个偶数版实验功能没人用、设计错误或者维护成本太高，X0.47 不应该硬着头皮“维护”，而应该允许：
+
+Keep
+Refactor
+Merge
+Deprecate
+Delete
+
+健壮性不仅意味着修 bug，也意味着控制系统熵。
+
+如果按照商业价值排序，我现在最看重的其实不是继续装修首页，而是这条主线：
+
+X0.46 产品内容成熟 → X0.48 ERP-LITE → X0.50 AI Copilot → X0.52 工业数据 → X0.54 Customer Portal。

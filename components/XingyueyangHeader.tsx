@@ -10,7 +10,8 @@ const navItems = [
   { number: "02", label: "产品中心", href: "/products" },
   { number: "03", label: "行业方案", href: "/solutions" },
   { number: "04", label: "工程案例", href: "/cases" },
-  { number: "05", label: "联系我们", href: "/contact" },
+  { number: "05", label: "智慧工厂", href: "/smart-factory" },
+  { number: "06", label: "联系我们", href: "/contact" },
 ];
 
 export default function XingyueyangHeader() {
@@ -87,7 +88,7 @@ export default function XingyueyangHeader() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden items-center gap-7 text-[13px] text-slate-600 lg:flex">
+          <nav className="hidden items-center gap-1 text-[13px] text-slate-600 lg:flex xl:gap-3">
             {navItems.map((item) => {
               const active =
                 pathname === item.href ||
