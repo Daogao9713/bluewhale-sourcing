@@ -81,11 +81,11 @@ const initialSuggestions = [
    Component
    ========================================================= */
 
-export default function FloatingAI() {
+export default function FloatingAI({ initiallyOpen = false }: { initiallyOpen?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initiallyOpen);
   const [q, setQ] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [busy, setBusy] = useState(false);
