@@ -12,6 +12,7 @@ export default function sitemap():
     "/products",
     "/solutions",
     "/technology",
+    "/smart-factory",
     "/cases",
     "/news",
     "/contact",

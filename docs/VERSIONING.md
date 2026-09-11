@@ -1,5 +1,9 @@
 # Blue Whale 项目版本命名规则
 
+## 星玥阳 X0.46 发布记录
+
+客户定制分支延续 `X0.x` 编号；本次 `X0.46 · Smart Factory Experience` 为偶数前端体验版本，基于 X0.45。新增 3D 智慧冲压产线与本地 AI/MES 仿真演示，不新增生产系统集成。说明见 `CHANGELOG-X0.46.md`，安装见 `INSTALL-X0.46.md`。
+
 本规则从 **V0.12** 起正式采用，用于 `bluewhale-sourcing` 后续官网、业务系统、AI、数据库与功能升级的统一编号。
 
 ---

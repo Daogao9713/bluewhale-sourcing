@@ -23,6 +23,9 @@ export default function Page() {
             <p className="mt-7 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">
               以分子光谱感知、在线检测和工业系统集成为核心，为不同工业场景提供技术解决方案入口。
             </p>
+            <Link href="/smart-factory" className="xy-glass-button-dark mt-7 inline-flex items-center gap-3 rounded-full px-6 py-3.5 text-sm font-semibold !text-white">
+              体验 3D 智慧工厂 <span aria-hidden="true">↗</span>
+            </Link>
           </div>
         </section>
 
