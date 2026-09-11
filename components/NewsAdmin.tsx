@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { getSafeImageUrl } from "@/lib/image-url";
 
 type NewsStatus =
   | "draft"
@@ -85,6 +86,7 @@ export default function NewsAdmin() {
 
   const [form, setForm] =
     useState<NewsForm>(empty);
+  const coverUrl = getSafeImageUrl(form.cover_url);
 
   const [loading, setLoading] =
     useState(false);
@@ -1414,12 +1416,10 @@ export default function NewsAdmin() {
               </span>
             </div>
 
-            {form.cover_url ? (
+            {coverUrl ? (
               <div className="mt-5 overflow-hidden rounded-2xl bg-slate-100">
                 <Image
-                  src={
-                    form.cover_url
-                  }
+                  src={coverUrl}
                   alt=""
                   width={1600}
                   height={800}

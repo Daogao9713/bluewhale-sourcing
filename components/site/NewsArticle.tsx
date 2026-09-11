@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { getSafeImageUrl } from "@/lib/image-url";
 import { useSiteLanguage } from "./SiteLanguageProvider";
 
 type NewsArticleData = {
@@ -12,6 +13,7 @@ type NewsArticleData = {
 
 export default function NewsArticle({ article }: { article: NewsArticleData }) {
   const { lang, copy } = useSiteLanguage();
+  const coverUrl = getSafeImageUrl(article.cover_url);
 
   const pick = (field: string) =>
     article?.[`${field}_${lang}`] || article?.[`${field}_zh`] || "";
@@ -40,9 +42,9 @@ export default function NewsArticle({ article }: { article: NewsArticleData }) {
       </section>
 
       <article className="site-shell max-w-5xl py-16 md:py-20">
-        {article.cover_url ? (
+        {coverUrl ? (
           <Image
-            src={article.cover_url}
+            src={coverUrl}
             alt=""
             width={1200}
             height={600}

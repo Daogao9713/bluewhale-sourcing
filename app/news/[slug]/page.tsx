@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import XingyueyangHeader from "@/components/XingyueyangHeader";
+import { getSafeImageUrl } from "@/lib/image-url";
 import { getPublishedNewsBySlug } from "@/lib/news/server";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +39,8 @@ export default async function NewsDetailPage({
 
   if (!n) notFound();
 
+  const coverUrl = getSafeImageUrl(n.cover_url);
+
   return (
     <main className="min-h-screen bg-white">
       <XingyueyangHeader />
@@ -50,7 +53,7 @@ export default async function NewsDetailPage({
         {(pickSummary(n) || n.content_zh || n.content_en || n.content_ja) && (
           <p className="mt-7 text-xl leading-9 text-slate-500">{pickSummary(n)}</p>
         )}
-        {n.cover_url && <Image src={n.cover_url} width={1200} height={600} className="mt-10 max-h-[560px] w-full rounded-[30px] object-cover" alt="" />}
+        {coverUrl && <Image src={coverUrl} width={1200} height={600} className="mt-10 max-h-[560px] w-full rounded-[30px] object-cover" alt="" />}
         <div className="mt-12 whitespace-pre-wrap text-[16px] leading-9 text-slate-700">
           {n.content_zh || n.content_en || n.content_ja || pickSummary(n)}
         </div>

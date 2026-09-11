@@ -114,6 +114,8 @@ export default function XingyueyangFooter() {
             © 2026 江苏星玥阳科技有限公司
           </span>
 
+          <span>Website Design by GT  </span>
+
           <div className="flex flex-wrap gap-x-5 gap-y-2">
             <span>UNIVERSE TECH</span>
 
