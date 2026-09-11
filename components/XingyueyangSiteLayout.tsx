@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import XingyueyangHeader from "@/components/XingyueyangHeader";
 import XingyueyangFooter from "@/components/XingyueyangFooter";
-import FloatingAI from "@/components/FloatingAI";
+import FloatingAILauncher from "@/components/FloatingAILauncher";
 
 export default function XingyueyangSiteLayout({
   children,
@@ -16,7 +16,7 @@ export default function XingyueyangSiteLayout({
 
       <XingyueyangFooter />
 
-      <FloatingAI />
+      <FloatingAILauncher />
     </div>
   );
 }

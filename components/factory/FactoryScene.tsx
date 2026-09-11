@@ -19,9 +19,10 @@ type Props = {
 export default function FactoryScene(props: Props) {
   const host = useRef<HTMLDivElement>(null);
   const live = useRef(props);
+  const invalidate = useRef<() => void>(() => {});
   const cameraAction = useRef<(action: string) => void>(() => {});
   const [failed, setFailed] = useState(false);
-  useEffect(() => { live.current = props; }, [props]);
+  useEffect(() => { live.current = props; invalidate.current(); }, [props]);
 
   useEffect(() => {
     const root = host.current;
@@ -32,8 +33,9 @@ export default function FactoryScene(props: Props) {
       const failureTimer = window.setTimeout(() => setFailed(true), 0);
       return () => window.clearTimeout(failureTimer);
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
-    renderer.shadowMap.enabled = true;
+    const compact = window.matchMedia('(pointer: coarse)').matches;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, compact ? 1.25 : 1.5));
+    renderer.shadowMap.enabled = !compact;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -71,14 +73,14 @@ export default function FactoryScene(props: Props) {
       cyan: new THREE.MeshStandardMaterial({ color: 0x46d6ef, emissive: 0x199eb5, emissiveIntensity: .6, roughness: .35 }),
       green: new THREE.MeshStandardMaterial({ color: 0x62f1b1, emissive: 0x1ad583, emissiveIntensity: .8 }),
       red: new THREE.MeshStandardMaterial({ color: 0xff586c, emissive: 0xa70f2b, emissiveIntensity: 1.4, metalness: .25, roughness: .3 }),
-      redGlass: new THREE.MeshPhysicalMaterial({ color: 0xff405a, emissive: 0x9b1028, emissiveIntensity: 1.2, transparent: true, opacity: .18, roughness: .15, depthWrite: false }),
-      glass: new THREE.MeshPhysicalMaterial({ color: 0x80d9ed, metalness: .05, roughness: .12, transparent: true, opacity: .22, side: THREE.DoubleSide, depthWrite: false }),
+      redGlass: new THREE.MeshStandardMaterial({ color: 0xff405a, emissive: 0x9b1028, emissiveIntensity: 1.2, transparent: true, opacity: .18, roughness: .15, depthWrite: false }),
+      glass: new THREE.MeshStandardMaterial({ color: 0x80d9ed, metalness: .05, roughness: .12, transparent: true, opacity: .22, side: THREE.DoubleSide, depthWrite: false }),
     };
-    const geometries: THREE.BufferGeometry[] = [];
+    const unitBox = new THREE.BoxGeometry(1, 1, 1);
+    const geometries: THREE.BufferGeometry[] = [unitBox];
     const textures: THREE.Texture[] = [];
     function box(parent: THREE.Object3D, x: number, y: number, z: number, w: number, h: number, d: number, mat: THREE.Material) {
-      const geo = new THREE.BoxGeometry(w, h, d); geometries.push(geo);
-      const mesh = new THREE.Mesh(geo, mat); mesh.position.set(x, y, z); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
+      const mesh = new THREE.Mesh(unitBox, mat); mesh.scale.set(w, h, d); mesh.position.set(x, y, z); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
     }
     function roller(parent: THREE.Object3D, x: number, y: number, z: number, radius: number, length: number, mat = mats.steel) {
       const geo = new THREE.CylinderGeometry(radius, radius, length, 24); geometries.push(geo);
@@ -102,11 +104,11 @@ export default function FactoryScene(props: Props) {
     function label(text: string, x: number, y: number) {
       const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 96;
       const context = canvas.getContext('2d'); if (!context) return;
-      context.fillStyle = 'rgba(8,22,39,.85)'; context.fillRect(0, 0, 512, 96);
-      context.strokeStyle = '#467289'; context.strokeRect(1, 1, 510, 94);
-      context.font = '600 36px sans-serif'; context.fillStyle = '#d6edf5'; context.textAlign = 'center'; context.fillText(text, 256, 61);
+      context.fillStyle = 'rgba(255,255,255,.95)'; context.fillRect(0, 0, 512, 96);
+      context.strokeStyle = '#b9cce1'; context.strokeRect(1, 1, 510, 94);
+      context.font = '600 36px sans-serif'; context.fillStyle = '#23466a'; context.textAlign = 'center'; context.fillText(text, 256, 61);
       const texture = new THREE.CanvasTexture(canvas); textures.push(texture);
-      const material = new THREE.SpriteMaterial({ map: texture, depthTest: false }); labelMaterials.push(material);
+      const material = new THREE.SpriteMaterial({ map: texture, depthTest: false, toneMapped: false }); labelMaterials.push(material);
       const sprite = new THREE.Sprite(material); sprite.position.set(x, y, 0); sprite.scale.set(2.9, .55, 1); scene.add(sprite);
     }
     stationX.forEach((x, i) => {
@@ -214,7 +216,7 @@ export default function FactoryScene(props: Props) {
     renderer.domElement.addEventListener('pointerdown', pointerDown);
     renderer.domElement.addEventListener('pointerup', pointerUp);
     let contextLost = false;
-    const lost = (e: Event) => { e.preventDefault(); contextLost = true; setFailed(true); };
+    const lost = (e: Event) => { e.preventDefault(); contextLost = true; stopFrame(); setFailed(true); };
     renderer.domElement.addEventListener('webglcontextlost', lost);
     function homeCamera() {
       const distance = Math.max(29, 46 / Math.max(.5, camera.aspect));
@@ -225,21 +227,46 @@ export default function FactoryScene(props: Props) {
     const resize = new ResizeObserver(() => {
       const width = root.clientWidth, height = root.clientHeight;
       if (!width || !height) return;
-      camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height); homeCamera();
+      camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height); homeCamera(); invalidate.current();
     }); resize.observe(root);
     cameraAction.current = action => {
       if (action === 'top') { camera.position.set(0, 33, .01); orbit.target.set(0, 0, 0); }
       else if (action === 'front') { camera.position.set(0, 12, 33); orbit.target.set(0, 1, 0); }
       else if (action === 'in' || action === 'out') camera.position.sub(orbit.target).multiplyScalar(action === 'in' ? .85 : 1.15).clampLength(12, 55).add(orbit.target);
       else homeCamera();
-      orbit.update();
+      orbit.update(); invalidate.current();
     };
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     let frame = 0, previous = 0, phase = 0, loaderPhase = 0, unloaderPhase = 0;
+    let visible = false;
+    const frameInterval = 1000 / 30;
+    function stopFrame() {
+      cancelAnimationFrame(frame);
+      frame = 0;
+      previous = 0;
+    }
+    function requestFrame() {
+      if (!frame && visible && !document.hidden && !contextLost) frame = requestAnimationFrame(render);
+    }
+    invalidate.current = requestFrame;
+    function syncVisibility() {
+      if (visible && !document.hidden) requestFrame();
+      else stopFrame();
+    }
+    const visibility = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      syncVisibility();
+    });
+    visibility.observe(root);
+    document.addEventListener('visibilitychange', syncVisibility);
+    reduced.addEventListener('change', requestFrame);
+    orbit.addEventListener('change', requestFrame);
     function render(now: number) {
-      frame = requestAnimationFrame(render);
-      const dt = Math.min((now - previous) / 1000, .06); previous = now;
-      if (document.hidden || contextLost) return;
+      frame = 0;
+      if (!visible || document.hidden || contextLost) return;
+      if (previous && now - previous < frameInterval) { requestFrame(); return; }
+      const dt = previous ? Math.min((now - previous) / 1000, .1) : 0;
+      previous = now;
       const p = live.current;
       const defectRate = p.defects.burr + p.defects.surface + p.defects.handling;
       const aoiAlarm = defectRate > 1 || p.defects.wear;
@@ -263,7 +290,8 @@ export default function FactoryScene(props: Props) {
           if (part.position.x > 13.4) part.position.set(10.7 + i * .22, .91 + (i % 2) * .07, -2.1 - i * .1);
         });
       }
-      const pulse = .55 + Math.sin(now * .008) * .35;
+      const animate = p.running && !reduced.matches;
+      const pulse = animate ? .55 + Math.sin(now * .008) * .35 : .55;
       detectionBox.visible = aoiAlarm;
       defectMark.visible = aoiAlarm;
       moldAlert.visible = p.defects.wear || p.defects.burr > 2;
@@ -272,18 +300,22 @@ export default function FactoryScene(props: Props) {
       aoiPart.material = aoiAlarm ? mats.red : mats.steel;
       if (filmWeb) {
         const mismatch = Math.min(.35, p.defects.filmError);
-        filmWeb.rotation.z = mismatch > .08 ? Math.sin(now * .006) * mismatch * .35 : 0;
-        filmWeb.scale.z = 1 + (mismatch > .08 ? Math.sin(now * .01) * .08 : 0);
+        filmWeb.rotation.z = mismatch > .08 && animate ? Math.sin(now * .006) * mismatch * .35 : 0;
+        filmWeb.scale.z = 1.4 * (1 + (mismatch > .08 && animate ? Math.sin(now * .01) * .08 : 0));
         filmWeb.material = mismatch > .08 ? mats.redGlass : mats.glass;
       }
       groups.forEach((_, i) => { highlights[i].visible = i === p.selected; lamps[i].material = !p.running ? mats.amber : p.warning && (i === 5 || i === 6) ? mats.amber : mats.green; });
       stock.forEach((part, i) => { part.visible = i < Math.ceil(p.buffer / 6); });
       ngParts.forEach((part, i) => { part.visible = aoiAlarm && i < Math.min(7, Math.ceil(defectRate / 1.4)); });
       orbit.update(); renderer.render(scene, camera);
+      if (animate) requestFrame();
     }
-    frame = requestAnimationFrame(render);
     return () => {
-      cancelAnimationFrame(frame); resize.disconnect(); orbit.dispose();
+      stopFrame(); resize.disconnect(); visibility.disconnect();
+      document.removeEventListener('visibilitychange', syncVisibility);
+      reduced.removeEventListener('change', requestFrame);
+      orbit.removeEventListener('change', requestFrame);
+      orbit.dispose(); invalidate.current = () => {};
       renderer.domElement.removeEventListener('pointerdown', pointerDown);
       renderer.domElement.removeEventListener('pointerup', pointerUp);
       renderer.domElement.removeEventListener('webglcontextlost', lost);

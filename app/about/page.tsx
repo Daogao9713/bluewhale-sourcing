@@ -1,3 +1,4 @@
+import Link from "next/link";
 import XingyueyangSiteLayout from "@/components/XingyueyangSiteLayout";
 import { company } from "@/lib/xingyueyang";
 
@@ -130,6 +131,16 @@ export default function Page() {
             </div>
           </div>
         </section>
+        <div className="mx-auto max-w-7xl px-5 pb-8 lg:px-8">
+          <details className="text-xs text-slate-500">
+            <summary className="w-fit cursor-pointer rounded py-2 focus-visible:outline-2 focus-visible:outline-blue-600">
+              内部访问
+            </summary>
+            <Link href="/workspace" prefetch={false} className="mt-2 inline-block rounded py-2 text-blue-700 hover:underline focus-visible:outline-2 focus-visible:outline-blue-600">
+              员工登录 →
+            </Link>
+          </details>
+        </div>
       </main>
     </XingyueyangSiteLayout>
   );

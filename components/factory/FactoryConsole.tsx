@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { controls, factoryReducer, formatTime, initialState, mesBatches, mesEvidence, scenarios, stations } from '@/lib/factory/simulation';
 import type { FactoryState, Parameters } from '@/lib/factory/simulation';
 import './factory.css';
@@ -36,8 +36,8 @@ function Trend({ values, color, min, max, threshold, label }: { values: number[]
   const y = (v: number) => 62 - Math.min(1, Math.max(0, (v - min) / (max - min))) * 54;
   const points = values.map((v, i) => `${8 + i * 224 / Math.max(1, values.length - 1)},${y(v)}`).join(' ');
   return <svg className="factory-trend" viewBox="0 0 240 72" role="img" aria-label={label}>
-    {[16, 39, 62].map(n => <path key={n} d={`M8 ${n}H232`} stroke="rgba(180,210,240,.07)" />)}
-    {threshold !== undefined ? <path d={`M8 ${y(threshold)}H232`} stroke="#ffbd69" strokeDasharray="3 4" opacity=".65" /> : null}
+    {[16, 39, 62].map(n => <path key={n} d={`M8 ${n}H232`} stroke="rgba(71,85,105,.15)" />)}
+    {threshold !== undefined ? <path d={`M8 ${y(threshold)}H232`} stroke="#b45309" strokeDasharray="3 4" opacity=".65" /> : null}
     <polygon points={`8,68 ${points} ${8 + (values.length > 1 ? 224 : 0)},68`} fill={color} opacity=".07" />
     <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" />
     <circle cx={values.length > 1 ? 232 : 8} cy={y(values.at(-1) ?? min)} r="3" fill={color} />
@@ -52,19 +52,19 @@ function Monitor({ state }: { state: FactoryState }) {
     <section className="factory-glass factory-kpi">
       <div className="factory-between"><span>过程能力 <small>CPK</small></span><span className={`factory-tag ${m.cpk < 1.33 ? 'warn' : ''}`}>{m.cpk < 1.33 ? '低于目标' : '能力稳定'}</span></div>
       <div className="factory-number">{m.cpk.toFixed(2)}<small>目标 ≥ 1.33</small></div>
-      <Trend values={state.history.map(x => x.cpk)} color="#70d9ef" min={0} max={3} threshold={1.33} label="平面度单侧能力指数最近60次更新趋势，虚线为1.33" />
+      <Trend values={state.history.map(x => x.cpk)} color="#2563eb" min={0} max={3} threshold={1.33} label="平面度单侧能力指数最近60次更新趋势，虚线为1.33" />
       <div className="factory-kpi-foot">平面度 · 单侧 Cpu · n = 32</div>
     </section>
     <section className="factory-glass factory-kpi">
       <div className="factory-between"><span>综合良率 <small>YIELD</small></span><span className="factory-dot" data-alert={m.yieldRate < 98.5} /></div>
       <div className="factory-number">{m.yieldRate.toFixed(2)}<sup>%</sup></div>
-      <Trend values={state.history.map(x => x.yieldRate)} color="#87ebbc" min={85} max={100} threshold={98.5} label="综合良率最近60次更新趋势，虚线为98.5%" />
+      <Trend values={state.history.map(x => x.yieldRate)} color="#15803d" min={85} max={100} threshold={98.5} label="综合良率最近60次更新趋势，虚线为98.5%" />
       <div className="factory-kpi-foot">滚动估计 · 演示目标 ≥ 98.5%</div>
     </section>
     <section className="factory-glass factory-kpi">
       <div className="factory-between"><span>毛刺缺陷率 <small>BURR</small></span><span className="factory-dot" data-alert={m.burr > 1} /></div>
       <div className={`factory-number ${m.burr > 1 ? 'factory-amber' : ''}`}>{m.burr.toFixed(2)}<sup>%</sup></div>
-      <Trend values={state.history.map(x => x.burr)} color="#ffc178" min={0} max={10} threshold={1} label="毛刺缺陷率最近60次更新趋势，虚线为1%" />
+      <Trend values={state.history.map(x => x.burr)} color="#b45309" min={0} max={10} threshold={1} label="毛刺缺陷率最近60次更新趋势，虚线为1%" />
       <div className="factory-kpi-foot">外观缺陷 · 与尺寸能力独立统计</div>
     </section>
     <section className="factory-glass factory-operations">
@@ -76,9 +76,9 @@ function Monitor({ state }: { state: FactoryState }) {
   </aside>;
 }
 
-function MesRecords({ state }: { state: FactoryState }) {
+const MesRecords = memo(function MesRecords({ params, wear }: { params: Parameters; wear: boolean }) {
   const [matched, setMatched] = useState(false), [page, setPage] = useState(0);
-  const evidence = useMemo(() => mesEvidence(state.params, state.wear), [state.params, state.wear]);
+  const evidence = useMemo(() => mesEvidence(params, wear), [params, wear]);
   const rows = matched ? evidence.rows : mesBatches;
   const pages = Math.max(1, Math.ceil(rows.length / 10));
   const current = Math.min(page, pages - 1);
@@ -88,7 +88,7 @@ function MesRecords({ state }: { state: FactoryState }) {
     <div className="factory-table-wrap" tabIndex={0} aria-label="MES合成批次数据，可横向滚动"><table><thead><tr><th>批次 / 匿名料号 UT-SUS-01</th><th>冲压 SPM</th><th>覆膜 m/min</th><th>下料 次/min</th><th>样本量</th><th>能力参考</th><th>BURR</th><th>YIELD</th><th>模具</th></tr></thead><tbody>{rows.slice(current * 10, current * 10 + 10).map(row => <tr key={row.id}><td>{row.id}</td><td>{row.speed}</td><td>{row.film.toFixed(1)}</td><td>{row.unloader}</td><td>{fmt(row.count)}</td><td className={row.cpk < 1.33 ? 'factory-amber' : ''}>{row.cpk.toFixed(2)}</td><td>{row.burr.toFixed(2)}%</td><td className={row.yieldRate < 98.5 ? 'factory-amber' : 'factory-mint'}>{row.yieldRate.toFixed(2)}%</td><td>{row.wear ? '磨损' : '正常'}</td></tr>)}</tbody></table></div>
     <div className="factory-between factory-pagination"><small>历史能力参考为合成稳态模型值；当前 Cpk 来自 32 件滚动样本。</small><div><button disabled={current === 0} onClick={() => setPage(current - 1)} aria-label="上一页批次">←</button><span>{current + 1} / {pages}</span><button disabled={current >= pages - 1} onClick={() => setPage(current + 1)} aria-label="下一页批次">→</button></div></div>
   </section>;
-}
+});
 
 function DecisionPlan({ state, onExecute }: { state: FactoryState; onExecute: () => void }) {
   const plan = state.plan;
@@ -179,7 +179,7 @@ export default function FactoryConsole() {
 
   return <main className="factory-console">
     <div className="factory-topline"><div><span className="factory-brand-mark"><Icon name="cube" /></span><div><Link href="/">UNIVERSE TECH</Link><span>星玥阳 · 工业智能体验中心</span></div></div><div><span className="factory-demo-badge">交互仿真 DEMO</span><Link href="/solutions">返回行业方案 ↗</Link></div></div>
-    <header className="factory-page-heading"><div><p className="factory-eyebrow">DIGITAL TWIN / STAMPING LINE 01</p><h1>让产线，看得见。<span>让决策，有依据。</span></h1></div><div className="factory-session"><span className="factory-dot" data-alert={!state.running} /><span>{state.running ? '仿真运行中' : '仿真已暂停'}</span><time>{formatTime(state.tick)}</time><small>X0.46</small></div></header>
+    <header className="factory-page-heading"><div><p className="factory-eyebrow">DIGITAL TWIN / STAMPING LINE 01</p><h1>智慧工厂<span>精密冲压产线</span></h1></div><div className="factory-session"><span className="factory-dot" data-alert={!state.running} /><span>{state.running ? '仿真运行中' : '仿真已暂停'}</span><time>{formatTime(state.tick)}</time><small>X0.47</small></div></header>
     <div className="factory-scenario-bar"><div><span className="factory-eyebrow">演示场景</span><div className="factory-scenarios">{scenarios.map(s => <button key={s.key} disabled={demoActive} aria-pressed={state.scenario === s.key} title={s.summary} onClick={() => dispatch({ type: 'scenario', scenario: s.key })}>{s.name}</button>)}</div></div><div className="factory-demo-actions"><button className="factory-guided-start" onClick={demoActive ? stopDemo : startDemo}>{demoActive ? '■ 结束自动演示' : demoFinished ? '↻ 再演示一次' : '▶ 开始 90 秒客户演示'}</button><button className="factory-quiet" onClick={resetAll}>↺ 重置</button></div></div>
     {demoActive || demoFinished ? <section className={`factory-glass factory-demo-guide ${demoFinished ? 'is-complete' : ''}`} aria-live="polite"><div className="factory-demo-progress"><span style={{ width: `${demoElapsed / DEMO_DURATION * 100}%` }} /></div><div><span className="factory-demo-step">{String(demoSteps.indexOf(currentDemoStep) + 1).padStart(2, '0')} / {String(demoSteps.length).padStart(2, '0')}</span><div><h2>{currentDemoStep.title}</h2><p>{currentDemoStep.text}</p></div><time>{String(Math.floor(demoElapsed / 60)).padStart(2, '0')}:{String(demoElapsed % 60).padStart(2, '0')}</time>{demoFinished ? <button onClick={startDemo}>↻ 重播</button> : <button onClick={toggleDemoPause}>{demoPaused ? '▶ 继续' : 'Ⅱ 暂停'}</button>}<button onClick={demoFinished ? stopDemo : skipDemoStep} disabled={!demoFinished && !nextDemoStep}>{demoFinished ? '关闭' : '下一步 →'}</button></div></section> : null}
 
@@ -220,7 +220,7 @@ export default function FactoryConsole() {
     <DecisionResult state={state} />
 
     <div className="factory-record-tabs" role="tablist" aria-label="数据与决策记录"><button id="factory-mes-tab" role="tab" aria-selected={tab === 'mes'} aria-controls="factory-mes-panel" tabIndex={tab === 'mes' ? 0 : -1} onKeyDown={e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { setTab('audit'); document.getElementById('factory-audit-tab')?.focus(); } }} onClick={() => setTab('mes')}>MES 批次数据 <span>120</span></button><button id="factory-audit-tab" role="tab" aria-selected={tab === 'audit'} aria-controls="factory-audit-panel" tabIndex={tab === 'audit' ? 0 : -1} onKeyDown={e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { setTab('mes'); document.getElementById('factory-mes-tab')?.focus(); } }} onClick={() => setTab('audit')}>决策与操作记录 <span>{state.audit.length}</span></button></div>
-    <div id="factory-mes-panel" role="tabpanel" aria-labelledby="factory-mes-tab" hidden={tab !== 'mes'}><MesRecords state={state} /></div>
+    <div id="factory-mes-panel" role="tabpanel" aria-labelledby="factory-mes-tab" hidden={tab !== 'mes'}><MesRecords params={state.params} wear={state.wear} /></div>
     <div id="factory-audit-panel" role="tabpanel" aria-labelledby="factory-audit-tab" hidden={tab !== 'audit'}><section className="factory-glass factory-audit"><h2>每次决策，都有记录。</h2><p className="factory-muted">本次演示最多保留 40 条操作事件；刷新或重置后清空。</p>{state.audit.length ? <ol>{state.audit.map(entry => <li key={entry.id}><time>{entry.time}</time><p>{entry.text}</p></li>)}</ol> : <p className="factory-empty">选择异常场景并执行 AI 方案后，这里会记录参数变化与处理步骤。</p>}</section></div>
     <details className="factory-method"><summary>关于数据、统计口径与演示边界</summary><div><p>参考上传 CPK 报告的结构：23 个尺寸特征、32 组样本、平面度单侧上限 0.600 mm；其平面度均值约 0.1906 mm、标准差约 0.0721 mm、单侧能力约 1.89。此页面使用匿名料号与重新生成的样本，未公开原始报告、客户标识或逐件测量值。</p><p>实时能力使用 Cpu = (USL − 样本均值) / (3 × 样本标准差)，在界面简称 Cpk（单侧）。32 件滚动窗口处于动态演示中，不代表完成稳定性检验的量产能力结论。历史能力参考使用合成模型的均值和标准差。</p><p>YIELD、BURR、膜面缺陷、功率和参数响应均为合成模型；良率独立包含多个缺陷机制，不能直接由平面度 Cpk 推导。MES 的 120 批数据与调参建议来自同一演示模型，相关记录不是因果验证。演示良率目标 98.5%、毛刺关注线 1%、能力目标 1.33 均不是客户验收标准。</p><p>原材假设为 SUS 卷料，送料节距 250 mm，每冲次 1 件；速度同步关系为 m/min = SPM × 0.25。仿真时间按 10 倍推进，32 件质量窗口采用加速采样，不等同于计件系统。AI 是离线规则演示，不调用真实设备、现有企业 Agent 或官网咨询助手。</p></div></details>
     <footer className="factory-footer"><span>UNIVERSE TECH · INDUSTRIAL INTELLIGENCE</span><span>从感知，到行动。</span><Link href="/inquiry">讨论你的工厂方案 ↗</Link></footer>

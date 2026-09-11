@@ -99,6 +99,7 @@ export default function XingyueyangHeader() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={item.href === "/smart-factory" ? false : undefined}
                   className={`relative rounded-full px-3.5 py-2 transition-all duration-300 ${
                   active
                   ? "xy-nav-active-glass font-semibold text-slate-950"
@@ -111,14 +112,6 @@ export default function XingyueyangHeader() {
               );
             })}
           </nav>
-
-          {/* Desktop Workspace */}
-          <Link
-            href="/workspace"
-            className="xy-glass-button-dark hidden shrink-0 rounded-full px-5 py-2.5 text-[12px] font-semibold !text-white lg:inline-flex"
-          >
-            企业工作台
-          </Link>
 
           {/* Mobile Menu Button */}
           <button
@@ -182,6 +175,7 @@ export default function XingyueyangHeader() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={item.href === "/smart-factory" ? false : undefined}
                   onClick={() => setMenuOpen(false)}
                   className={`xy-mobile-nav-item ${active ? "xy-mobile-nav-item-active" : ""}`}
                 >
@@ -196,25 +190,6 @@ export default function XingyueyangHeader() {
               );
             })}
           </nav>
-
-          {/* Workspace */}
-          <Link
-            href="/workspace"
-            onClick={() => setMenuOpen(false)}
-            className="mt-7 flex items-center justify-between rounded-[20px] bg-amber-400 px-5 py-4 font-semibold !text-slate-950"
-          >
-            <div>
-              <div className="text-[9px] font-bold tracking-[.18em] opacity-60">
-                ENTERPRISE SYSTEM
-              </div>
-
-              <div className="mt-1 text-[15px]">
-                进入企业工作台
-              </div>
-            </div>
-
-            <span className="text-xl">→</span>
-          </Link>
 
           {/* Footer */}
           <div className="mt-auto pt-10">

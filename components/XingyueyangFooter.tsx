@@ -23,7 +23,7 @@ export default function XingyueyangFooter() {
             <Link href="/" className="inline-flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-white/70 bg-white/50">
              <Image
-  src="/xingyueyang-icon.png"
+  src="/xingyueyang-logo.png"
   alt=""
   width={36}
   height={36}
@@ -117,14 +117,7 @@ export default function XingyueyangFooter() {
           <div className="flex flex-wrap gap-x-5 gap-y-2">
             <span>UNIVERSE TECH</span>
 
-            <Link
-              href="/workspace"
-              className="transition hover:text-slate-300"
-            >
-              ENTERPRISE WORKSPACE
-            </Link>
-
-            <span>X0.44</span>
+            <span>X0.47</span>
           </div>
         </div>
       </div>
