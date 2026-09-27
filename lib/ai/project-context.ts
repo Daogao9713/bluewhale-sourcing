@@ -1,4 +1,5 @@
 export type ProjectContext = {
+
   industry: string | null;
   target: string | null;
   product: string | null;
